@@ -1,4 +1,4 @@
-import { } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 
 
 // Place where a live feed will be shown.

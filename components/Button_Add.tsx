@@ -3,8 +3,8 @@ import { StyleSheet, View, Pressable, Text } from 'react-native';
 export default function Button_Add() {
     return (
         <View style={styles.buttonContainer}>
-            <Pressable style={styles.button} onPress={() => alert("Testing.")}>
-                <Text style={styles.buttonLabel}>Add</Text>
+            <Pressable style={styles.button} onPress={() => alert("Implementing functionality...")}>
+                <Text style={styles.buttonLabel}>ADD</Text>
             </Pressable>
         </View>
     )
@@ -26,6 +26,6 @@ const styles = StyleSheet.create({
         justifyContent:'center'
     },
     buttonLabel: {
-        fontSize: 33,
+        fontSize: 22.2,
     }
 });
