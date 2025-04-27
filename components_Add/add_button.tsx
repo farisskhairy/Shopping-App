@@ -35,7 +35,20 @@ export default function Add_Button() {
     } else {
         return (
             <View>
-                <Pressable style={styling.outside_add_area} onPress= {(change_to_add_component)}>
+                <Pressable style={styling.outside_add_area}>
+                    <View style={styling.go_back_area}>
+                        <Pressable style={styling.go_back_button}
+                            onPress= {() => {
+                                change_to_add_component();
+                                name_input("");
+                                price_input("");
+                                brand_input("");
+                                quantity_input("");
+                            }}
+                        >
+                            <Fontisto name="arrow-left-l" size={29.6} color="black" />
+                        </Pressable>
+                    </View>
                     <Pressable style={styling.add_area}>
                         <TextInput style={styling.add_area_component} placeholder="Name" onChangeText={name_input} value={name} textAlign="center" placeholderTextColor="black"/>
                         <TextInput style={styling.add_area_component} placeholder="Price" onChangeText={price_input} value={price} textAlign="center" placeholderTextColor="black"/>
@@ -133,7 +146,17 @@ const styling = StyleSheet.create({
         alignItems: 'center',
         marginTop: 31.9,
         borderColor: '#72B1F5',
-        bottom: 0
+    },
+    go_back_area: {
+        height: 0,
+        width: 383,
+        justifyContent: 'flex-end',
+        alignItems: 'flex-start'
+    },
+    go_back_button: {
+        width: 79,
+        height: 87,
+        justifyContent: 'center'
     }
 });
 
