@@ -1,12 +1,18 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, TextInput } from 'react-native';
 import Entypo from '@expo/vector-icons/Entypo';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useState } from 'react';
-
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Fontisto from '@expo/vector-icons/Fontisto';
 
 
 export default function Add_Button() {
     const [intro_buttons, set_intro_buttons] = useState(true);
+    
+    const [name, name_input] = useState("");
+    const [price, price_input] = useState("");
+    const [brand, brand_input] = useState("");
+    const [quantity, quantity_input] = useState("");
 
     function change_to_add_component() {
         set_intro_buttons(!intro_buttons);
@@ -28,11 +34,24 @@ export default function Add_Button() {
         );
     } else {
         return (
-            <Pressable style={styling.outside_add_area} onPress= {(change_to_add_component)}>
-                <Pressable style={styling.add_area}>
-                    
+            <View>
+                <Pressable style={styling.outside_add_area} onPress= {(change_to_add_component)}>
+                    <Pressable style={styling.add_area}>
+                        <TextInput style={styling.add_area_component} placeholder="Name" onChangeText={name_input} value={name} textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={styling.add_area_component} placeholder="Price" onChangeText={price_input} value={price} textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={styling.add_area_component} placeholder="Brand" onChangeText={brand_input} value={brand} textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={styling.add_area_component} placeholder="Quantity" onChangeText={quantity_input} value={quantity} textAlign="center" placeholderTextColor="black"/>
+                    </Pressable>
+                    <Pressable style={styling.add_picture_button} onPress= {() => { alert("Currently implementing..."); }}>
+                        <MaterialIcons name="add-a-photo" size={40.15} color="white" />
+                    </Pressable>
+                    <View style={styling.finish_add_area}>
+                        <Pressable style={styling.finish_add_button} onPress= {() => { alert("Currently implementing..."); }}>
+                            <Fontisto name="arrow-right-l" size={54.3} color="black" />
+                        </Pressable>
+                    </View>
                 </Pressable>
-            </Pressable>
+            </View>
         );
     }
 }
@@ -73,7 +92,9 @@ const styling = StyleSheet.create({
         borderWidth: 6.48,
         borderRadius: 13.8,
         width: 383,
-        height: 545.85
+        height: 426,
+        alignItems: 'center',
+        marginBottom: 22.75
     },
     outside_add_area: {
         height: '100%',
@@ -81,6 +102,38 @@ const styling = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         flexDirection: 'column',
+    },
+    add_area_component: {
+        height: 87,
+        width: 334,
+        borderColor: 'white',
+        borderWidth: 5.4,
+        borderRadius: 16.54,
+        margin: 13,
+        marginBottom: 0,
+        fontSize: 23.3,
+    },
+    add_picture_button: {
+        width: 90,
+        height: 90,
+        borderRadius: 45,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: "black"
+    },
+    finish_add_area: {
+        height: 47.4,
+    },
+    finish_add_button: {
+        borderWidth: 6.48,
+        borderRadius: 13.8,
+        width: 383,
+        height: 87,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 31.9,
+        borderColor: '#72B1F5',
+        bottom: 0
     }
 });
 
