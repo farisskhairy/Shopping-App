@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, TextInput } from 'react-native';
+import { View, Text, Pressable, StyleSheet, TextInput, Keyboard, ScrollView } from 'react-native';
 import Entypo from '@expo/vector-icons/Entypo';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useState } from 'react';
@@ -35,7 +35,7 @@ export default function Add_Button() {
     } else {
         return (
             <View>
-                <Pressable style={styling.outside_add_area}>
+                <Pressable style={styling.outside_add_area} onPress={Keyboard.dismiss}>
                     <View style={styling.go_back_area}>
                         <Pressable style={styling.go_back_button}
                             onPress= {() => {
