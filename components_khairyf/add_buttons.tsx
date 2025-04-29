@@ -1,26 +1,31 @@
-import { View, Text, Pressable, StyleSheet, TextInput, Keyboard, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable, StyleSheet, TextInput, Keyboard } from 'react-native';
+// Imports for icons
 import Entypo from '@expo/vector-icons/Entypo';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React, { useState } from 'react';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Fontisto from '@expo/vector-icons/Fontisto';
 
 
-export default function Add_Button() {
+export default function Add_Buttons() {
+    // Variables to determine which add buttons to be rendered.
     const [intro_buttons, set_intro_buttons] = useState(true);
-    
+    // Variables to keep track of various user input.
     const [name, name_input] = useState("");
     const [price, price_input] = useState("");
     const [brand, brand_input] = useState("");
     const [quantity, quantity_input] = useState("");
 
+    // Function to switch rendering of the different add buttons.
     function change_to_add_component() {
         set_intro_buttons(!intro_buttons);
     }
 
+    // Renders the introduction add buttons - selecting between manual adding or scanning barcode.
     if (intro_buttons) {
         return (
             <View>
+                {/* Button to select manual adding of item information. onPress prop renders manual adding buttons. */}
                 <Pressable style={styling.intro_add_button} onPress= {change_to_add_component}>
                     <Text style={styling.text_intro_add_button}>New Item</Text>
                     <Ionicons name="sparkles-sharp" size={24} color='black'/>
@@ -30,13 +35,15 @@ export default function Add_Button() {
                     <Entypo name="camera" size={32.4} color='black'/>
                 </Pressable>
             </View>
-            
         );
+    // Renders the add buttons when choosing manual adding of items.
     } else {
         return (
             <View>
                 <Pressable style={styling.outside_add_area} onPress={Keyboard.dismiss}>
                     <View style={styling.go_back_area}>
+                        {/* Button to go back to intro add buttons. onPress prop renders intro add buttons and
+                        resets user input information when going back to intro add button screen. */}
                         <Pressable style={styling.go_back_button}
                             onPress= {() => {
                                 change_to_add_component();
@@ -69,7 +76,7 @@ export default function Add_Button() {
     }
 }
 
-
+// Style data for various shapes displayed on screen.
 const styling = StyleSheet.create({
     intro_add_button: {
         width: 392,
