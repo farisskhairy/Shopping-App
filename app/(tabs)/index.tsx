@@ -48,7 +48,7 @@ const sampleItems: GroceryItem[] = [
 export default function Index() {
   const [items, setItems] = useState<GroceryItem[]>(sampleItems);
   const [searchText, setSearchText] = useState("");
-  
+  //item filtering across all data fields
   const filteredItems = items.filter((item) => {
     const query = searchText.toLowerCase();
     return (
