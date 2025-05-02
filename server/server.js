@@ -5,7 +5,7 @@ const express = require("express");
 const app = express();
 
 app.get("/", (req, res) => {
-    res.send("Hi. hello.");
+    res.send("Hi. hello. hi.");
 });
 
 
