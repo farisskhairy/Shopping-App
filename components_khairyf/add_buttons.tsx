@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, TextInput, Keyboard, Button } from 'react-native';
-import { CameraMode, CameraType, CameraView, useCameraPermissions } from "expo-camera";
+import React, { useState } from 'react';
+import { View, Text, Pressable, StyleSheet, TextInput, Keyboard} from 'react-native';
+import { useRouter } from 'expo-router';
 // Imports for icons
 import Entypo from '@expo/vector-icons/Entypo';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -9,6 +9,9 @@ import Fontisto from '@expo/vector-icons/Fontisto';
 
 
 export default function Add_Buttons() {
+
+    const router = useRouter();
+
     // Variables to determine which add buttons to be rendered.
     const [intro_buttons, set_intro_buttons] = useState(true);
     // Variables to keep track of various user input.
@@ -21,54 +24,6 @@ export default function Add_Buttons() {
     function change_to_add_component() {
         set_intro_buttons(!intro_buttons);
     }
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    const [use_camera_permission, request_camera_permission] = useCameraPermissions();
-    const camera = useRef<CameraView>(null);
-    const [photo_file, set_photo_file] = useState<string | null>(null);
-    const [mode, set_mode] = useState<CameraMode>("picture");
-    const [front_or_back_camera, set_front_or_back_camera] = useState<CameraType>("back");
-    const [start_camera, open_camera] = useState(false);
-
-    const take_picture = async () => {
-        const photo = await camera.current?.takePictureAsync();
-        set_photo_file(photo?.uri);
-    };
-
-    const toggle_camera = () => {
-        set_front_or_back_camera((current) => (current === "back" ? "front" : "back"));
-    }
-
-    function activate_camera() {
-        open_camera(!start_camera);
-    }
-
-    if (start_camera) {
-        if (!use_camera_permission) {
-            return (
-                <>
-                </>
-            );
-        }
-    
-        if (!use_camera_permission.granted) {
-            return (
-                <>
-                    <Button onPress={request_camera_permission} title="Allow Camera Access"/>
-                </>
-            );
-        }
-
-        if (start_camera) {
-            return (
-                <CameraView ref={camera} mode={mode} facing={front_or_back_camera} mute={false} style={{width: "100%", flex: 1}}>
-                    
-                </CameraView>
-            );
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Renders the introduction add buttons - selecting between manual adding or scanning barcode.
     if (intro_buttons) {
@@ -79,7 +34,7 @@ export default function Add_Buttons() {
                     <Text style={styling.text_intro_add_button}>New Item</Text>
                     <Ionicons name="sparkles-sharp" size={24} color='black'/>
                 </Pressable>
-                <Pressable style={styling.intro_camera_button} onPress= {() => { activate_camera(); }}>
+                <Pressable style={styling.intro_camera_button} onPress= {() => router.navigate('/camera')}>
                     <Text style={styling.text_intro_camera_button}>Add through Barcode</Text>
                     <Entypo name="camera" size={32.4} color='black'/>
                 </Pressable>
@@ -111,7 +66,7 @@ export default function Add_Buttons() {
                         <TextInput style={styling.add_area_component} placeholder="Brand" onChangeText={brand_input} value={brand} textAlign="center" placeholderTextColor="black"/>
                         <TextInput style={styling.add_area_component} placeholder="Quantity" onChangeText={quantity_input} value={quantity} textAlign="center" placeholderTextColor="black"/>
                     </Pressable>
-                    <Pressable style={styling.add_picture_button} onPress= {() => { activate_camera() }}>
+                    <Pressable style={styling.add_picture_button} onPress= {() => router.navigate('/camera')}>
                         <MaterialIcons name="add-a-photo" size={40.15} color="white" />
                     </Pressable>
                     <View style={styling.finish_add_area}>
