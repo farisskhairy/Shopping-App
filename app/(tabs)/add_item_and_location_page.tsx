@@ -1,6 +1,6 @@
 import { View, StyleSheet } from 'react-native';
 // Imports khairyf's component for add buttons.
-import Add_Buttons from '@/components_khairyf/add_buttons';
+import Add_Buttons from 'components_khairyf/add_buttons';
 
 
 

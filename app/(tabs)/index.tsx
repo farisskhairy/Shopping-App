@@ -1,95 +1,150 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, FlatList, StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, FlatList, StyleSheet, Button, ActivityIndicator, ScrollView } from "react-native";
+import { collection, getDocs, query, orderBy, limit, startAfter, doc, getDoc } from "firebase/firestore";
+import { db } from "firebaseConfig";
 import { GroceryItem } from "../../models/GroceryItem";
 
-// Sample test data using the GroceryItem model
-const sampleItems: GroceryItem[] = [
-  {
-    id: "1",
-    name: "Oat Milk",
-    brand: "Oatly",
-    price: 3.99,
-    quantityInPackage: "1L",
-    barcode: "1234567890123",
-    tags: ["vegan", "dairy-free", "non-gmo"],
-  },
-  {
-    id: "2",
-    name: "Eggs",
-    brand: "Happy Hen",
-    price: 4.5,
-    quantityInPackage: "12 pack",
-    barcode: "2345678901234",
-    tags: ["organic", "protein"],
-  },
-  {
-    id: "3",
-    name: "Ben & Jerry's Chocolate Fudge Brownie",
-    brand: "Ben & Jerry's",
-    price: 5.25,
-    quantityInPackage: "465ml",
-    barcode: "2345678901235",
-    tags: ["dairy", "dessert", "frozen foods", "ice cream"],
-  },
-  {
-    id: "4",
-    name: "Almond Butter",
-    brand: "Barney",
-    price: 8.99,
-    quantityInPackage: "10 oz",
-    barcode: "3456789012345",
-    tags: ["gluten-free", "protein"],
-  }
-];
-
-//const [items, setItems] = useState<GroceryItem[]>([]);
+const PAGE_SIZE = 20
 
 // Place where app will navigate to as the home page of the app. It is set as the SEARCH page so the home page of the app will be the Search page.
 export default function Index() {
-  const [items, setItems] = useState<GroceryItem[]>(sampleItems);
+  const [items, setItems] = useState<GroceryItem[]>([]);
+  const [storeNames, setStoreNames] = useState<Record<string, string>>({});
   const [searchText, setSearchText] = useState("");
-  //item filtering across all data fields
-  const filteredItems = items.filter((item) => {
+  const [lastVisible, setLastVisible] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [allTags, setAllTags] = useState<string[]>([]);
+
+  // Load initial data
+  useEffect(() => {
+    loadGroceries();
+  }, []);
+
+  const loadGroceries = async () => {
+    setLoading(true);
+    const q = query(collection(db, "groceries"), orderBy("name"), limit(PAGE_SIZE));
+    const snapshot = await getDocs(q);
+    const groceries = await attachStoreNames(snapshot.docs);
+    setItems(groceries);
+    setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+    extractTags(groceries);
+    setLoading(false);
+  };
+
+  const loadMore = async () => {
+    if (!lastVisible || loadingMore) return;
+    setLoadingMore(true);
+    const q = query(
+      collection(db, "groceries"),
+      orderBy("name"),
+      startAfter(lastVisible),
+      limit(PAGE_SIZE)
+    );
+    const snapshot = await getDocs(q);
+    const moreGroceries = await attachStoreNames(snapshot.docs);
+    setItems(prev => [...prev, ...moreGroceries]);
+    setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+    extractTags(moreGroceries);
+    setLoadingMore(false);
+  };
+
+  const attachStoreNames = async (docs: any[]) => {
+    const newItems: GroceryItem[] = [];
+    const storeCache = { ...storeNames };
+
+    for (const docSnap of docs) {
+      const data = docSnap.data();
+      const storeId = data.storeId;
+      if (!storeCache[storeId]) {
+        const storeDoc = await getDoc(doc(db, "stores", storeId));
+        if (storeDoc.exists()) {
+          storeCache[storeId] = storeDoc.data().name;
+        } else {
+          storeCache[storeId] = "Unknown Store";
+        }
+      }
+      newItems.push({ id: docSnap.id, ...data, storeName: storeCache[storeId] });
+    }
+
+    setStoreNames(storeCache);
+    return newItems;
+  };
+
+  const extractTags = (groceryItems: GroceryItem[]) => {
+    const tags = new Set(allTags);
+    groceryItems.forEach(item => {
+      item.tags?.forEach(tag => tags.add(tag));
+    });
+    setAllTags(Array.from(tags).sort());
+  };
+
+  const filteredItems = items.filter(item => {
     const query = searchText.toLowerCase();
-    return (
+    const matchesText = (
       item.name.toLowerCase().includes(query) ||
       item.brand.toLowerCase().includes(query) ||
       item.quantityInPackage.toLowerCase().includes(query) ||
       item.barcode.includes(query) ||
       item.tags.some(tag => tag.toLowerCase().includes(query))
     );
+    const matchesTag = selectedTag ? item.tags.includes(selectedTag) : true;
+    return matchesText && matchesTag;
   });
 
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Search Groceries</Text>
+
       <TextInput
         style={styles.input}
         placeholder="Search by name, brand, barcode or tags"
         value={searchText}
         onChangeText={setSearchText}
       />
-      <FlatList
-        data={filteredItems}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.name}>{item.name}</Text>
-            <Text>Brand: {item.brand}</Text>
-            <Text>Price: ${item.price.toFixed(2)}</Text>
-            <Text>Qty: {item.quantityInPackage}</Text>
-            <Text>Barcode: {item.barcode}</Text>
-            <Text>Tags: {item.tags.join(", ")}</Text>
-          </View>
-        )}
-      />
+    <View style={{ zIndex:1}}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagFilter}>
+        <Button title="All" onPress={() => setSelectedTag(null)} color={!selectedTag ? "#007aff" : "#ccc"} />
+        {allTags.map(tag => (
+          <Button
+            key={tag}
+            title={tag}
+            onPress={() => setSelectedTag(tag)}
+            color={selectedTag === tag ? "#007aff" : "#ccc"}
+          />
+        ))}
+      </ScrollView>
+      </View>
+      {loading ? (
+        <ActivityIndicator size="large" color="#888" style={{ marginTop: 10 }} />
+      ) : (
+        <FlatList
+          data={filteredItems}
+          keyExtractor={(item) => item.id}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={loadingMore ? <ActivityIndicator size="small" /> : null}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <Text style={styles.name}>{item.name}</Text>
+              <Text>Brand: {item.brand}</Text>
+              <Text>Price: ${item.price.toFixed(2)}</Text>
+              <Text>Qty: {item.quantityInPackage}</Text>
+              <Text>Barcode: {item.barcode}</Text>
+              <Text>Store: {item.storeName}</Text>
+              <Text>Tags: {item.tags.join(", ")}</Text>
+            </View>
+          )}
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 50,
+    paddingTop: 20,
     paddingHorizontal: 20,
     backgroundColor: "#fff",
     flex: 1,
@@ -103,7 +158,7 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     padding: 10,
     borderRadius: 6,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   card: {
     paddingVertical: 10,
@@ -113,5 +168,9 @@ const styles = StyleSheet.create({
   name: {
     fontWeight: "bold",
     fontSize: 18,
+  },
+  tagFilter: {
+    marginBottom: 10,
+    flexGrow: 0,
   },
 });
