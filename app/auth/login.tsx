@@ -25,6 +25,7 @@ export default function Login() {
       clientId: GOOGLE_CLIENT_ID,
       redirectUri: makeRedirectUri({
         scheme: 'com.myapp',
+        path: 'oauth2redirect',
       }),
       scopes: ['profile', 'email'],
       responseType: 'code',

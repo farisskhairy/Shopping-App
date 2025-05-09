@@ -21,8 +21,21 @@ export const ProfilePage = () => {
     name: 'Name',
     email: 'Email',
     phone: 'Phone',
-    photoUrl: '/Users/bwang/Documents/Shopping-App-login_s/assets/images/shoppingApp.png',  
+    photoUrl: 'https://hips.hearstapps.com/wdy.h-cdn.co/assets/17/39/loulou-1742.jpg?crop=1.00xw:0.667xh;0,0.0409xh&resize=980:*',  
   });
+
+  const [friends, setFriends] = useState([
+    {
+      name: 'Alice Smith',
+      phone: '123-456-7890',
+      photoUrl: 'https://hips.hearstapps.com/hmg-prod/images/05biggiesmalls1-1543610785.jpg?crop=1xw:1xh;center,top&resize=980:*',
+    },
+    {
+      name: 'Bob Johnson',
+      phone: '987-654-3210',
+      photoUrl: 'https://hips.hearstapps.com/hmg-prod/images/08yuki2-1543611001.jpg?crop=1xw:0.9991319444444444xh;center,top&resize=980:*',
+    },
+  ]);
 
   const [isEditing, setIsEditing] = useState<EditingState>({
     name: false,
@@ -116,9 +129,24 @@ export const ProfilePage = () => {
         </View>
       </View>
 
+      <View style={styles.friendsListContainer}>
+        <Text style={styles.label}>Friends</Text>
+        {friends.map((friend, index) => (
+            <View key={index} style={styles.friendItem}>
+            <Image source={{ uri: friend.photoUrl }} style={styles.friendAvatar} />
+              <View>
+                <Text style={styles.friendName}>{friend.name}</Text>
+                <Text style={styles.friendPhone}>{friend.phone}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
       <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
         <Text style={styles.signOutButtonText}>Sign Out</Text>
       </TouchableOpacity>
+
+
 
     </ScrollView>
   );
@@ -203,5 +231,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  friendsListContainer: {
+    width: '100%',
+    marginTop: 30,
+  },
+  friendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    backgroundColor: '#f9f9f9',
+    padding: 10,
+    borderRadius: 8,
+  },
+  friendAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+  },
+  friendName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  friendPhone: {
+    fontSize: 14,
+    color: '#666',
   },
 });
