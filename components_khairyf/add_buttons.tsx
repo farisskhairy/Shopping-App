@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, TextInput, Keyboard} from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Link } from 'expo-router';
+import { Image } from "expo-image";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 // Imports for icons
 import Entypo from '@expo/vector-icons/Entypo';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -8,9 +10,36 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Fontisto from '@expo/vector-icons/Fontisto';
 
 
-export default function Add_Buttons() {
+const router = useRouter();
 
-    const router = useRouter();
+// Gets path of photo that was recently taken for local storage cache.
+let picture_file = await AsyncStorage.getItem("picture_file");
+
+// Deletes photo from local storage cache.
+async function delete_picture() {
+    await AsyncStorage.removeItem("picture_file");
+}
+
+// Component that renders either a button to open camera, or a button that is a mini preview of recently taken picture.
+function Picture_Button() {
+    if (picture_file) {
+        return (
+            // Renders mini preview of picture, opens full sized picture when clicked.
+            <Pressable style={styling.add_picture_button} onPress= {() => router.navigate("/picture")}>
+                <Image source = { picture_file } style={styling.picture}/>
+            </Pressable>
+        );
+    } else {
+        return (
+            // Opens camera to take pictures.
+            <Pressable style={styling.add_picture_button} onPress= {() => router.navigate("/camera")}>
+                <MaterialIcons name="add-a-photo" size={40.15} color="white"/>
+            </Pressable>
+        );
+    }
+}
+
+export default function Add_Buttons() {
 
     // Variables to determine which add buttons to be rendered.
     const [intro_buttons, set_intro_buttons] = useState(true);
@@ -55,6 +84,7 @@ export default function Add_Buttons() {
                                 price_input("");
                                 brand_input("");
                                 quantity_input("");
+                                delete_picture();
                             }}
                         >
                             <Fontisto name="arrow-left-l" size={29.6} color="black" />
@@ -66,13 +96,16 @@ export default function Add_Buttons() {
                         <TextInput style={styling.add_area_component} placeholder="Brand" onChangeText={brand_input} value={brand} textAlign="center" placeholderTextColor="black"/>
                         <TextInput style={styling.add_area_component} placeholder="Quantity" onChangeText={quantity_input} value={quantity} textAlign="center" placeholderTextColor="black"/>
                     </Pressable>
-                    <Pressable style={styling.add_picture_button} onPress= {() => router.navigate('/camera')}>
-                        <MaterialIcons name="add-a-photo" size={40.15} color="white" />
-                    </Pressable>
+
+                    <Picture_Button/>
+
+                    {/* Working .. */}
                     <View style={styling.finish_add_area}>
-                        <Pressable style={styling.finish_add_button} onPress= {() => { alert("Currently implementing..."); }}>
-                            <Fontisto name="arrow-right-l" size={54.3} color="black" />
-                        </Pressable>
+                        <Link href="/live_feed_page" asChild>
+                            <Pressable style={styling.finish_add_button}>
+                                <Fontisto name="arrow-right-l" size={54.3} color="black" />
+                            </Pressable>
+                        </Link>
                     </View>
                 </Pressable>
             </View>
@@ -168,6 +201,10 @@ const styling = StyleSheet.create({
         width: 79,
         height: 87,
         justifyContent: 'center'
+    },
+    picture: {
+        width: "100%",
+        height: "100%"
     }
 });
 
