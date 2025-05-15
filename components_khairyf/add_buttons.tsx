@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, TextInput, Keyboard} from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { Image } from "expo-image";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 // Imports for icons
 import Entypo from '@expo/vector-icons/Entypo';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -12,34 +11,12 @@ import Fontisto from '@expo/vector-icons/Fontisto';
 
 const router = useRouter();
 
-// Gets path of photo that was recently taken for local storage cache.
-let picture_file = await AsyncStorage.getItem("picture_file");
-
-// Deletes photo from local storage cache.
-async function delete_picture() {
-    await AsyncStorage.removeItem("picture_file");
+type Props = {
+    photo_file: string | undefined;
 }
 
-// Component that renders either a button to open camera, or a button that is a mini preview of recently taken picture.
-function Picture_Button() {
-    if (picture_file) {
-        return (
-            // Renders mini preview of picture, opens full sized picture when clicked.
-            <Pressable style={styling.add_picture_button} onPress= {() => router.navigate("/picture")}>
-                <Image source = { picture_file } style={styling.picture}/>
-            </Pressable>
-        );
-    } else {
-        return (
-            // Opens camera to take pictures.
-            <Pressable style={styling.add_picture_button} onPress= {() => router.navigate("/camera")}>
-                <MaterialIcons name="add-a-photo" size={40.15} color="white"/>
-            </Pressable>
-        );
-    }
-}
+export default function Add_Buttons(props: Props) {
 
-export default function Add_Buttons() {
 
     // Variables to determine which add buttons to be rendered.
     const [intro_buttons, set_intro_buttons] = useState(true);
@@ -54,6 +31,25 @@ export default function Add_Buttons() {
         set_intro_buttons(!intro_buttons);
     }
 
+    // Component that renders either a button to open camera, or a button that is a mini preview of recently taken picture.
+    function Picture_Button() {
+        if (props.photo_file !== undefined) {
+            return (
+                // Renders mini preview of picture, opens full sized picture when clicked.
+                <Pressable style={styling.add_picture_button} onPress= {() => router.push(`/picture?photo_file=${props.photo_file}`)}>
+                    <Image source = { props.photo_file } style={styling.picture}/>
+                </Pressable>
+            );
+        } else {
+            return (
+                // Opens camera to take pictures.
+                <Pressable style={styling.add_picture_button} onPress= {() => router.push("/camera")}>
+                    <MaterialIcons name="add-a-photo" size={40.15} color="white"/>
+                </Pressable>
+            );
+        }
+    }
+
     // Renders the introduction add buttons - selecting between manual adding or scanning barcode.
     if (intro_buttons) {
         return (
@@ -63,7 +59,7 @@ export default function Add_Buttons() {
                     <Text style={styling.text_intro_add_button}>New Item</Text>
                     <Ionicons name="sparkles-sharp" size={24} color='black'/>
                 </Pressable>
-                <Pressable style={styling.intro_camera_button} onPress= {() => router.navigate('/camera')}>
+                <Pressable style={styling.intro_camera_button} onPress= {() => router.push("/camera")}>
                     <Text style={styling.text_intro_camera_button}>Add through Barcode</Text>
                     <Entypo name="camera" size={32.4} color='black'/>
                 </Pressable>
@@ -84,7 +80,6 @@ export default function Add_Buttons() {
                                 price_input("");
                                 brand_input("");
                                 quantity_input("");
-                                delete_picture();
                             }}
                         >
                             <Fontisto name="arrow-left-l" size={29.6} color="black" />
@@ -97,7 +92,8 @@ export default function Add_Buttons() {
                         <TextInput style={styling.add_area_component} placeholder="Quantity" onChangeText={quantity_input} value={quantity} textAlign="center" placeholderTextColor="black"/>
                     </Pressable>
 
-                    <Picture_Button/>
+                    {/* <Picture_Button/> */}
+                    <Picture_Button />
 
                     {/* Working .. */}
                     <View style={styling.finish_add_area}>

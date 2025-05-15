@@ -20,25 +20,10 @@ export default function camera_page() {
     const [front_or_back_camera, set_front_or_back_camera] = useState<CameraType>("back");
     const [start_camera, open_camera] = useState(false);
     
-    // Takes a picture from camera, and saves it to local storage cache. Uses AsyncStorage library for local storage.
     const take_picture = async () => {
         const photo = await camera.current?.takePictureAsync();
         set_photo_file(photo?.uri);
-        try {
-            await AsyncStorage.setItem("picture_file", photo!.uri);
-        } catch (error) {
-            return;
-        }
     };
-
-    // Deletes picture from local storage cache.
-    async function delete_picture() {
-        try {
-            await AsyncStorage.removeItem("picture_file");
-        } catch (error) {
-            return;
-        }
-    }
 
     // Switch between front and back cameras.
     const toggle_camera = () => {
@@ -78,7 +63,7 @@ export default function camera_page() {
                 </View>
                 {/* Button to close camera. */}
                 <View style={{position: "absolute", top: "12.9%", left: "79%"}}>
-                    <Pressable onPress = {() => router.back()}>
+                    <Pressable onPress = {() => router.navigate("/add_item_and_location_page")}>
                         <AntDesign name="closecircle" size={40.2} color="black"/>
                     </Pressable>
                 </View>
@@ -95,7 +80,7 @@ export default function camera_page() {
                 <Image source= { photo_file } style={styling.picture}/>
                 {/* Button that saves picture and returns to Add Page. */}
                 <View style={{position: "absolute", top: "12.9%", left: "79%"}}>
-                    <Pressable onPress= {() => router.navigate("/add_item_and_location_page") }>
+                    <Pressable onPress= {() => { set_photo_file(undefined); router.navigate(`/add_item_and_location_page?photo_file=${photo_file}`); }}>
                         <AntDesign name="checkcircleo" size={40.2} color="black"/>
                     </Pressable>
                 </View>
@@ -104,7 +89,6 @@ export default function camera_page() {
                     <Pressable 
                         onPress = {() => { 
                             set_photo_file(undefined);
-                            delete_picture();
                         }}
                     >
                         <AntDesign name="closecircle" size={40.2} color="black"/>

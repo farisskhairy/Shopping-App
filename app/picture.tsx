@@ -1,33 +1,31 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams} from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
-// Gets path of photo that was recently taken for local storage cache.
-let picture_file = await AsyncStorage.getItem("picture_file");
 
 export default function show_picture() {
 
     const router = useRouter();
 
+    const { photo_file } = useLocalSearchParams<{ photo_file?: string }>();
+    console.log("picture page");
     // Returns a screen showing recently taken picture from camera.
     return (
         <View style={styling.picture_area}>
-            <Image source= { picture_file } style={styling.picture}/>
+            <Image source= { photo_file } style={styling.picture}/>
             <View style={{position: "absolute", top: "12.9%", left: "79%"}}>
                 {/* Button to go back to Add Page */}
-                <Pressable onPress= {() => router.navigate("/add_item_and_location_page")}>
+                <Pressable onPress= {() => router.navigate(`/add_item_and_location_page?photo_file=${photo_file}`)}>
                     <AntDesign name="checkcircleo" size={40.2} color="black"/>
                 </Pressable>
             </View>
             <View style={{position: "absolute", top: "12.9%", left: "9.96%"}}>
-                {/* Button to navigate to Camera Page */}
-                <Pressable onPress = {() => router.navigate("/camera")}>
+                <Pressable onPress = {() => router.push("/camera")}>
                     <AntDesign name="closecircle" size={40.2} color="black"/>
                 </Pressable>
-            </View>
+            </View> 
         </View>
     );
 }
