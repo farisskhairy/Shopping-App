@@ -1,95 +1,147 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, FlatList, StyleSheet } from "react-native";
-import { GroceryItem } from "../../models/GroceryItem";
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, FlatList, StyleSheet, Button, ActivityIndicator, ScrollView, Pressable } from "react-native";
+import { collection, getDocs, query, orderBy, limit, startAfter } from "firebase/firestore";
+import { useRouter } from 'expo-router';
+import { db } from "../../firebaseConfig";
 
-// Sample test data using the GroceryItem model
-const sampleItems: GroceryItem[] = [
-  {
-    id: "1",
-    name: "Oat Milk",
-    brand: "Oatly",
-    price: 3.99,
-    quantityInPackage: "1L",
-    barcode: "1234567890123",
-    tags: ["vegan", "dairy-free", "non-gmo"],
-  },
-  {
-    id: "2",
-    name: "Eggs",
-    brand: "Happy Hen",
-    price: 4.5,
-    quantityInPackage: "12 pack",
-    barcode: "2345678901234",
-    tags: ["organic", "protein"],
-  },
-  {
-    id: "3",
-    name: "Ben & Jerry's Chocolate Fudge Brownie",
-    brand: "Ben & Jerry's",
-    price: 5.25,
-    quantityInPackage: "465ml",
-    barcode: "2345678901235",
-    tags: ["dairy", "dessert", "frozen foods", "ice cream"],
-  },
-  {
-    id: "4",
-    name: "Almond Butter",
-    brand: "Barney",
-    price: 8.99,
-    quantityInPackage: "10 oz",
-    barcode: "3456789012345",
-    tags: ["gluten-free", "protein"],
-  }
-];
-
-//const [items, setItems] = useState<GroceryItem[]>([]);
+const PAGE_SIZE = 20
 
 // Place where app will navigate to as the home page of the app. It is set as the SEARCH page so the home page of the app will be the Search page.
 export default function Index() {
-  const [items, setItems] = useState<GroceryItem[]>(sampleItems);
+  const [items, setItems] = useState<any[]>([]);
+  const [storeNames, setStoreNames] = useState<Record<string, string>>({});
   const [searchText, setSearchText] = useState("");
-  //item filtering across all data fields
-  const filteredItems = items.filter((item) => {
-    const query = searchText.toLowerCase();
-    return (
-      item.name.toLowerCase().includes(query) ||
-      item.brand.toLowerCase().includes(query) ||
-      item.quantityInPackage.toLowerCase().includes(query) ||
-      item.barcode.includes(query) ||
-      item.tags.some(tag => tag.toLowerCase().includes(query))
+  const [lastVisible, setLastVisible] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [allTags, setAllTags] = useState<string[]>([]);
+
+  const router = useRouter();
+
+  // Load initial data
+  useEffect(() => {
+    loadGroceries();
+  }, []);
+
+  const loadGroceries = async () => {
+    setLoading(true);
+    const q = query(collection(db, "items"), orderBy("name"), limit(PAGE_SIZE));
+    const snapshot = await getDocs(q);
+    let groceries: any[] = [];
+    if (snapshot) {
+      for (const docSnap of snapshot.docs) {
+        groceries.push({ ...docSnap.data() });
+      }
+    }
+    setItems(groceries);
+    setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+    extractTags(groceries);
+    setLoading(false);
+  };
+
+  const loadMore = async () => {
+    if (!lastVisible || loadingMore) return;
+    setLoadingMore(true);
+    const q = query(
+      collection(db, "groceries"),
+      orderBy("name"),
+      startAfter(lastVisible),
+      limit(PAGE_SIZE)
     );
+    const snapshot = await getDocs(q);
+    let moreGroceries: any[] = [];
+    if (snapshot) {
+      for (const docSnap of snapshot.docs) {
+        moreGroceries.push({ ...docSnap.data() });
+      }
+    }
+    setItems(prev => [...prev, ...moreGroceries]);
+    setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+    extractTags(moreGroceries);
+    setLoadingMore(false);
+  };
+
+
+  const extractTags = (groceryItems: any[]) => {
+    const tags = new Set(allTags);
+    groceryItems.forEach(item => {
+      item.tags?.forEach((tag: any) => tags.add(tag));
+    });
+    setAllTags(Array.from(tags).sort());
+  };
+
+  const filteredItems = items.filter(item => {
+    const query = searchText.toLowerCase();
+    let matchesText;
+    let matchesTag;
+    if (item) {
+      matchesText = (
+        item.name.toString().toLowerCase().includes(query) ||
+        item.brand.toString().toLowerCase().includes(query) ||
+        item.quantity.toString().toLowerCase().includes(query) ||
+        // item.barcode.includes(query) ||
+        item.tags.some((tag: any) => tag.toString().toLowerCase().includes(query))
+      );
+        matchesTag = selectedTag ? item.tags.includes(selectedTag) : true;
+        return matchesText && matchesTag;
+    }
   });
 
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Search Groceries</Text>
+
       <TextInput
         style={styles.input}
         placeholder="Search by name, brand, barcode or tags"
         value={searchText}
         onChangeText={setSearchText}
       />
-      <FlatList
-        data={filteredItems}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.name}>{item.name}</Text>
-            <Text>Brand: {item.brand}</Text>
-            <Text>Price: ${item.price.toFixed(2)}</Text>
-            <Text>Qty: {item.quantityInPackage}</Text>
-            <Text>Barcode: {item.barcode}</Text>
-            <Text>Tags: {item.tags.join(", ")}</Text>
-          </View>
-        )}
-      />
+    <View style={{ zIndex:1}}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagFilter}>
+        <Button title="All" onPress={() => setSelectedTag(null)} color={!selectedTag ? "#007aff" : "#ccc"} />
+        {allTags.map(tag => (
+          <Button
+            key={tag}
+            title={tag}
+            onPress={() => setSelectedTag(tag)}
+            color={selectedTag === tag ? "#007aff" : "#ccc"}
+          />
+        ))}
+      </ScrollView>
+      </View>
+      {loading ? (
+        <ActivityIndicator size="large" color="#888" style={{ marginTop: 10 }} />
+      ) : (
+        <FlatList
+          data={filteredItems}
+          keyExtractor={(item) => item.id}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={loadingMore ? <ActivityIndicator size="small" /> : null}
+          renderItem={({ item }) => (
+            <Pressable style={styles.card} onPress = {() => { router.push(`/edit_item_page?id=${item.id}&name=${item.name}&sale_price=${item.sale_price}&retail_price=${item.retail_price}&brand=${item.brand}&quantity=${item.quantity}&store_name=${item.store_name}&store_id=${item.store_id}&store_address=${item.store_address}&upload=false`); }}>
+              <Text style={styles.name}>{item.name}</Text>
+              <Text>Brand: {item.brand}</Text>
+              <Text>Sale Price: ${item.sale_price}</Text>
+              <Text>Retail Price: ${item.retail_price}</Text>
+              <Text>Qty: {item.quantity}</Text>
+              {/* <Text>Barcode: {item.barcode}</Text> */}
+              <Text>Store: {item.store_name}</Text>
+              <Text>Address: {item.store_address}</Text>
+              {/* <Text>Tags: {item.tags.join(", ")}</Text> */}
+            </Pressable>
+          )}
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 50,
+    paddingTop: 20,
     paddingHorizontal: 20,
     backgroundColor: "#fff",
     flex: 1,
@@ -103,7 +155,7 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     padding: 10,
     borderRadius: 6,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   card: {
     paddingVertical: 10,
@@ -113,5 +165,9 @@ const styles = StyleSheet.create({
   name: {
     fontWeight: "bold",
     fontSize: 18,
+  },
+  tagFilter: {
+    marginBottom: 10,
+    flexGrow: 0,
   },
 });

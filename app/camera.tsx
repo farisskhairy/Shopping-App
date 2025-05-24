@@ -2,8 +2,7 @@ import React, { useState, useRef } from "react";
 import { CameraMode, CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import { Button, Pressable, StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
-import { useRouter, Link } from 'expo-router';
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter, useLocalSearchParams } from 'expo-router';
 // Imports for icons
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -12,6 +11,15 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 export default function camera_page() {
 
     const router = useRouter();
+
+    let { store_id, store_name, store_address } = useLocalSearchParams<{ store_id?: string; store_name?: string; store_address?: string }>();
+
+    let abbreviated_store_name = store_name;
+    if (abbreviated_store_name === undefined) {
+        abbreviated_store_name = "Store Location";
+    } else if (abbreviated_store_name.length > 14) {
+        abbreviated_store_name = abbreviated_store_name.substring(0, 12) + "..";
+    }
 
     const [use_camera_permission, request_camera_permission] = useCameraPermissions();
     const camera = useRef<CameraView>(null);
@@ -41,9 +49,9 @@ export default function camera_page() {
     // Screen renders a button to ask for camera permission.
     if (!use_camera_permission.granted) {
         return (
-            <>
+            <View>
                 <Button onPress={request_camera_permission} title="Allow Camera Access"/>
-            </>
+            </View>
         );
     }
 
@@ -63,7 +71,7 @@ export default function camera_page() {
                 </View>
                 {/* Button to close camera. */}
                 <View style={{position: "absolute", top: "12.9%", left: "79%"}}>
-                    <Pressable onPress = {() => router.navigate("/add_item_and_location_page")}>
+                    <Pressable onPress = {() => router.back()}>
                         <AntDesign name="closecircle" size={40.2} color="black"/>
                     </Pressable>
                 </View>
@@ -80,7 +88,16 @@ export default function camera_page() {
                 <Image source= { photo_file } style={styling.picture}/>
                 {/* Button that saves picture and returns to Add Page. */}
                 <View style={{position: "absolute", top: "12.9%", left: "79%"}}>
-                    <Pressable onPress= {() => { set_photo_file(undefined); router.navigate(`/add_item_and_location_page?photo_file=${photo_file}`); }}>
+                    <Pressable onPress= { () => {
+                                if (store_name) {
+                                    router.navigate(`/add_item_and_location/add_item?store_id=${store_id}&store_name=${store_name}&store_address=${store_address}&photo_file=${photo_file}`);
+                                } else {
+                                    router.navigate(`/add_item_and_location/add_item?photo_file=${photo_file}`);
+                                }
+                                set_photo_file(undefined);
+                            }
+                        }   
+                    >
                         <AntDesign name="checkcircleo" size={40.2} color="black"/>
                     </Pressable>
                 </View>
