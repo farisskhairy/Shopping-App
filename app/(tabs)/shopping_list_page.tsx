@@ -44,33 +44,27 @@ export default function ShoppingListPage() {
     const storeMatchCounts: Record<string, number> = {};
     const storeIdToName: Record<string, string> = {};
     const storeMatchedItems: Record<string, Set<string>> = {};
-
+  
     for (const item of items) {
-      const q = query(collection(db, "groceries"), where("name", "==", item.name));
+      const q = query(collection(db, "items"), where("name", "==", item.name));
       const snapshot = await getDocs(q);
-      console.log(`Matching groceries for "${item.name}":`, snapshot.docs.map(doc => doc.data()));
-
+      console.log(`Matching items for "${item.name}":`, snapshot.docs.map(doc => doc.data()));
+  
       for (const docSnap of snapshot.docs) {
         const data = docSnap.data();
-        const storeId = data.storeId;
-        const price = data.price;
+        const storeId = data.store_id;
+        const storeName = data.store_name;
+        const price = data.sale_price;
   
         if (!storeId || typeof price !== "number") continue;
-        if (!storeId) {
-          console.warn("Missing storeId for item:", data);
-        }
-
-        // Get store name (cached)
+  
+        // No need to query Firestore for store name — use directly
         if (!storeIdToName[storeId]) {
-          const storeDoc = await getDoc(doc(db, "stores", storeId));
-          if (!storeDoc.exists()) {
-            console.warn("No store found for storeId:", storeId);
-          }
-          storeIdToName[storeId] = storeDoc.exists() ? storeDoc.data().name : "Unknown Store";
+          storeIdToName[storeId] = storeName ?? "Unknown Store";
         }
   
         storeTotals[storeId] = (storeTotals[storeId] || 0) + price;
-        //storeMatchCounts[storeId] = (storeMatchCounts[storeId] || 0) + 1;
+  
         if (!storeMatchedItems[storeId]) {
           storeMatchedItems[storeId] = new Set();
         }
@@ -81,7 +75,7 @@ export default function ShoppingListPage() {
       }
     }
   
-    // Find store with lowest total
+    // Find the store with the lowest total
     let bestStoreId: string | null = null;
     let minTotal = Infinity;
   
