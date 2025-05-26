@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { launchImageLibraryAsync, MediaType } from 'expo-image-picker';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getFirestore, doc, getDoc, setDoc, query, collection, where, getDocs } from 'firebase/firestore';
 import { app } from '../../firebaseConfig';
 import { router } from 'expo-router';
-import * as FileSystem from 'expo-file-system';
 
 // profile information 
 type Profile = {
@@ -24,8 +21,6 @@ type EditingState = {
 };
 
 const firestore = getFirestore(app);
-const storage = getStorage(app);
-
 
 export const ProfilePage = () => {
   const [currentUser, setCurrentUser] = useState(() => getAuth().currentUser);
@@ -36,25 +31,25 @@ export const ProfilePage = () => {
     photoUrl: '',
   });
 
-  // to be implemented
-  const [friends, setFriends] = useState([
-    {
-      name: 'Alice Smith',
-      phone: '123-456-7890',
-      photoUrl: 'https://hips.hearstapps.com/hmg-prod/images/05biggiesmalls1-1543610785.jpg?crop=1xw:1xh;center,top&resize=980:*',
-    },
-  ]);
+  // friend list 
+  const [friends, setFriends] = useState<{ name: string; phone: string; photoUrl: string }[]>([]);
 
+  // Edit 
   const [isEditing, setIsEditing] = useState<EditingState>({
     name: false,
     email: false,
     phone: false,
   });
 
+  // change appearance 
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiOptions = ['😊', '😼', '😄', '😷', '🐰', '🐘', '🐶', '🐵', '🦊',  '🐸', '🐼', '🦁', '🐯', '🐻'];
+
+
   const loadProfileFromFirestore = async (user: any) => {
     const userRef = doc(firestore, 'users', user.uid);
     const userSnap = await getDoc(userRef);
-    const profileData = userSnap.exists() ? (userSnap.data() as Partial<Profile>) : {};
+    const profileData = userSnap.exists() ? (userSnap.data() as Partial<Profile & { friends: typeof friends }>) : {};
 
     setProfile({
       name: profileData.name || '',
@@ -62,6 +57,12 @@ export const ProfilePage = () => {
       phone: profileData.phone || '',
       photoUrl: profileData.photoUrl || '',
     });
+
+    setFriends(
+      (profileData.friends || []).filter(
+        (f) => f && (f.name || f.phone || f.photoUrl)
+      )
+    );
   };
 
   const saveProfileToFirestore = async (newProfile: Profile) => {
@@ -69,7 +70,6 @@ export const ProfilePage = () => {
     const userRef = doc(firestore, 'users', currentUser.uid);
     await setDoc(userRef, newProfile, { merge: true });
   };
-
 
   useEffect(() => {
     const auth = getAuth();
@@ -94,11 +94,70 @@ export const ProfilePage = () => {
     setProfile({ ...profile, [field]: value });
   };
 
-  const toggleEdit = (field: keyof EditingState) => {
-    if (isEditing[field]) {
-      saveProfileToFirestore(profile);
+  const toggleEdit = async (field: keyof EditingState) => {
+    const wasEditing = isEditing[field];
+
+    if (wasEditing) {
+      try {
+        if (!currentUser) return;
+        const userRef = doc(firestore, 'users', currentUser.uid);
+        await setDoc(userRef, { [field]: profile[field] }, { merge: true });
+      } catch (error) {
+        console.error(`Error saving ${field}:`, error);
+        Alert.alert('Save Failed', `Could not save ${field}`);
+      }
     }
-    setIsEditing({ ...isEditing, [field]: !isEditing[field] });
+
+    setIsEditing((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+  const [showSearchBar, setShowSearchBar] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const handleAddFriendSearch = async () => {
+    if (!searchQuery.trim()) return;
+
+    try {
+      const q = query(
+        collection(firestore, 'users'),
+        where('phone', '==', searchQuery.trim())
+      );
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        Alert.alert('No user found with that phone number.');
+        return;
+      }
+
+      const friendDoc = querySnapshot.docs[0];
+      const friendData = friendDoc.data();
+
+      // Avoid adding duplicate
+      
+      const alreadyAdded = friends.some(f => f.phone === friendData.phone);
+      if (alreadyAdded) {
+        Alert.alert('Friend already added.');
+        return;
+      }
+
+      const newFriend = {
+        name: friendData.name || '',
+        phone: friendData.phone || '',
+        photoUrl: friendData.photoUrl || '',
+      };
+
+      const updatedFriends = [...friends, newFriend];
+      setFriends(updatedFriends);
+
+      if (currentUser) {
+        const userRef = doc(firestore, 'users', currentUser.uid);
+        await setDoc(userRef, { friends: updatedFriends }, { merge: true });
+      }
+
+      setSearchQuery('');
+      setShowSearchBar(false);
+    } catch (error) {
+      console.error('Error searching friend:', error);
+      Alert.alert('Error searching friend');
+    }
   };
 
   const handleSignOut = async () => {
@@ -110,57 +169,42 @@ export const ProfilePage = () => {
     }
   };
 
-  const handleChangePhoto = async () => {
-    try {
-      const result = await launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        quality: 0.7,
-      });
+  const handleChangePhoto = () => {
+    setShowEmojiPicker((prev) => !prev);
+  };
 
-      if (result.canceled || !result.assets?.length) return;
-
-        const image = result.assets[0];
-        const uri = image.uri;
-
-    if (!uri) throw new Error('Image URI is missing');
-
-    // Convert image to blob using fetch
-    const blob = await new Promise<Blob>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.onload = () => resolve(xhr.response);
-      xhr.onerror = () => reject(new Error('Blob conversion failed'));
-      xhr.responseType = 'blob';
-      xhr.open('GET', uri, true);
-      xhr.send(null);
-    });
-
-    if (!currentUser) throw new Error('User not authenticated');
-
-    const storageRef = ref(storage, `profilePics/${currentUser.uid}.jpg`);
-    await uploadBytes(storageRef, blob);
-    const downloadURL = await getDownloadURL(storageRef);
-
-    setProfile((prev) => ({ ...prev, photoUrl: downloadURL }));
-    await saveProfileToFirestore({ ...profile, photoUrl: downloadURL });
-  } catch (error: any) {
-    console.error('Upload error:', error);
-    Alert.alert('Upload Failed', error.message || 'Could not upload image');
-  }
-};
+  const handleSelectEmoji = async (emoji: string) => {
+    setShowEmojiPicker(false);
+    setProfile((prev) => ({ ...prev, photoUrl: emoji }));
+    await saveProfileToFirestore({ ...profile, photoUrl: emoji });
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.profileHeader}>
-        <Image
-          source={{
-            uri: profile.photoUrl || 'https://via.placeholder.com/120',
-          }}
-          style={styles.avatar}
-        />
-        <TouchableOpacity style={styles.editPhotoButton} onPress={handleChangePhoto}>
-          <Text style={styles.editPhotoText}>Change Photo</Text>
+        {profile.photoUrl?.startsWith('http') ? (
+          <Image source={{ uri: profile.photoUrl }} style={styles.avatar} />
+        ) : (
+          <Text style={styles.emojiAvatar}>{profile.photoUrl || '🙂'}</Text>
+        )}
+
+        <TouchableOpacity style={styles.editProfileButton} onPress={handleChangePhoto}>
+          <Text style={styles.editProfileText}> Your appearance </Text>
         </TouchableOpacity>
+
+        {showEmojiPicker && (
+          <View style={styles.emojiPicker}>
+            {emojiOptions.map((emoji) => (
+              <TouchableOpacity
+                key={emoji}
+                onPress={() => handleSelectEmoji(emoji)}
+                style={styles.emojiOption}
+              >
+                <Text style={styles.emoji}>{emoji}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
 
       {(['name', 'email', 'phone'] as const).map((field) => (
@@ -184,11 +228,16 @@ export const ProfilePage = () => {
         </View>
       ))}
 
+
+    
       <View style={styles.friendsListContainer}>
         <Text style={styles.label}>Friends</Text>
         {friends.map((friend, index) => (
           <View key={index} style={styles.friendItem}>
-            <Image source={{ uri: friend.photoUrl }} style={styles.friendAvatar} />
+            
+            <Text style={[styles.friendAvatar, styles.emojiFriendAvatar]}>
+              {friend.photoUrl || '🙂'}
+            </Text>
             <View>
               <Text style={styles.friendName}>{friend.name}</Text>
               <Text style={styles.friendPhone}>{friend.phone}</Text>
@@ -196,6 +245,37 @@ export const ProfilePage = () => {
           </View>
         ))}
       </View>
+
+      <TouchableOpacity
+        onPress={() => setShowSearchBar(!showSearchBar)}
+        style={[styles.addFriendButton]}
+      >
+        <Text style={styles.editButtonText}>Add Friend</Text>
+      </TouchableOpacity>
+
+      {showSearchBar && (
+        <View style={{ flexDirection: 'row', marginTop: 10 }}>
+          <TextInput
+            placeholder="Enter phone number"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={{
+              flex: 1,
+              borderWidth: 1,
+              borderColor: '#ccc',
+              borderRadius: 8,
+              padding: 10,
+              marginRight: 10,
+              backgroundColor: '#f9f9f9',
+            }}
+            keyboardType="phone-pad"
+          />
+          <TouchableOpacity onPress={handleAddFriendSearch} style={styles.editButton}>
+            <Text style={styles.editButtonText}>Add</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
 
       <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
         <Text style={styles.signOutButtonText}>Sign Out</Text>
@@ -221,15 +301,40 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     marginBottom: 10,
   },
-  editPhotoButton: {
+  emojiAvatar: {
+    fontSize: 80,
+    marginBottom: 10,
+  },
+  editProfileButton: {
     backgroundColor: '#41436A',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
   },
-  editPhotoText: {
+  addFriendButton: {
+    backgroundColor: '#41436A',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  editProfileText: {
     color: '#fff',
     fontSize: 14,
+  },
+  emojiPicker: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  emojiOption: {
+    padding: 10,
+    margin: 5,
+    backgroundColor: '#eee',
+    borderRadius: 10,
+  },
+  emoji: {
+    fontSize: 28,
   },
   inputGroup: {
     width: '100%',
@@ -295,12 +400,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
   },
-  friendAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-  },
   friendName: {
     fontSize: 16,
     fontWeight: '600',
@@ -310,6 +409,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  friendAvatar: {
+  width: 50,
+  height: 50,
+  borderRadius: 25,
+  marginRight: 12,
+  justifyContent: 'center',
+  alignItems: 'center',
+  textAlign: 'center',
+},
+  emojiFriendAvatar: {
+  fontSize: 28,
+  lineHeight: 50, 
+  backgroundColor: '#eee',
+},
 });
 
 export default ProfilePage;

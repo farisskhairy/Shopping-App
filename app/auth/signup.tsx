@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, StyleSheet, TextInput } from 'react-native';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db, storage } from '../../firebaseConfig';  
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, getFirestore } from 'firebase/firestore';
+import { auth, db, app } from '../../firebaseConfig';  
 import { useRouter } from 'expo-router';
 
 export default function Signup() {
@@ -11,7 +11,6 @@ export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
 
   const handleSignUp = async () => {
     try {
@@ -19,34 +18,27 @@ export default function Signup() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      await saveUserToFirestore(user, name, phone);
-
-      Alert.alert('Account created!');
-      router.replace('./login');
-    } catch (error: any) {
-      Alert.alert('Sign Up Failed', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      console.log('signup page User UID:', user.uid); 
 
     // save info to firestore 
-  const saveUserToFirestore = async (user: any, name: string, phone: string) => {
-    const userRef = doc(db, 'users', user.uid);
-    const existing = await getDoc(userRef);
-
-    if (!existing.exists()) {
-      await setDoc(userRef, {
-        name: name.trim(),
+      await setDoc(doc(db, 'users', user.uid), {
+        name: name,
         email: user.email,
-        phone: phone.trim(),
         photoUrl: '',
         friends: [],
-        createdAt: new Date(),
-      });
-    }
-  };
+        shoppingList: [],
+    });
 
+    Alert.alert('Signup successful!');
+    router.replace('./login');  // go back to login page if user signs up successful 
+  } catch (error: any) {
+    Alert.alert('Signup Failed'); // signup failed message 
+    console.log('signup up failed', error.message); 
+    
+  } finally { 
+    setLoading(false); 
+  }
+  };
 
   return (
     <View style={styles.container}>
@@ -56,13 +48,6 @@ export default function Signup() {
         placeholder="Full Name"
         value={name}
         onChangeText={setName}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Phone Number"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
         style={styles.input}
       />
       <TextInput
@@ -91,7 +76,7 @@ export default function Signup() {
 
       <TouchableOpacity
         style={[styles.loginButton, { backgroundColor: '#6C63FF', marginTop: 12 }]}
-        onPress={() => router.replace('./login')}
+        onPress={() => router.replace('./login')} // navigate to the login page 
       >
         <Text style={styles.buttonText}>Back to Login</Text>
       </TouchableOpacity>
