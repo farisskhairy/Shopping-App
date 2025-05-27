@@ -1,5 +1,7 @@
 {
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
+
     "baseUrl": ".",
     "paths": {
       "@/*": ["app/*"]
@@ -12,13 +14,10 @@
       "./node_modules/@types",
       "./node_modules/babel__traverse"
     ],
+
     "target": "esnext",
     "module": "esnext",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -30,18 +29,18 @@
     "jsx": "react-native",
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "rootDir": "."
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
+    "src/**/*",
     ".expo/types/**/*.ts",
+
     "expo-env.d.ts",
     "app",
     "src"
+
   ],
-  "exclude": [
-    "node_modules"
-  ],
-  "extends": "expo/tsconfig.base"
+  "exclude": ["node_modules"]
 }

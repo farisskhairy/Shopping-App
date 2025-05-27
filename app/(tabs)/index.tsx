@@ -1,9 +1,9 @@
+
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, FlatList, StyleSheet, Button, ActivityIndicator, ScrollView } from "react-native";
 import { collection, getDocs, query, orderBy, limit, startAfter, doc, getDoc } from "firebase/firestore";
 import { db } from "firebaseConfig";
-//below import no longer needed
-//import { GroceryItem } from "../../models/GroceryItem";
+import 'expo-router/entry';
 
 const PAGE_SIZE = 20
 
