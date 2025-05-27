@@ -17,7 +17,7 @@ export default function TabLayout() {
                 }} 
             />
             <Tabs.Screen
-                name="add_item_and_location_page" 
+                name="add_item_and_location" 
                 options={{ 
                     title: 'Add',
                     tabBarIcon: ({ color, focused }) => (

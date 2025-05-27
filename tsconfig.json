@@ -1,8 +1,20 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "types": ["node"],
-    "typeRoots": ["./node_modules/@types"],
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["app/*"]
+    },
+    "types": [
+      "babel__traverse",
+      "node"
+    ],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./node_modules/babel__traverse"
+    ],
+
     "target": "esnext",
     "module": "esnext",
     "lib": ["dom", "dom.iterable", "esnext"],
@@ -24,7 +36,11 @@
   "include": [
     "src/**/*",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+
+    "expo-env.d.ts",
+    "app",
+    "src"
+
   ],
   "exclude": ["node_modules"]
 }
