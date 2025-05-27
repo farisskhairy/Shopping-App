@@ -1,105 +1,68 @@
-import React, { useState, useEffect } from 'react';
-import { Alert, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
-import * as WebBrowser from 'expo-web-browser';
-import { useAuthRequest, makeRedirectUri, exchangeCodeAsync } from 'expo-auth-session';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, Alert, StyleSheet, TextInput } from 'react-native';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth, db, storage } from '../../firebaseConfig';
 import { useRouter } from 'expo-router';
-import * as AuthSession from 'expo-auth-session';
-
-WebBrowser.maybeCompleteAuthSession();
-
-const GOOGLE_CLIENT_ID = '817998367509-lvnpikddm7553hnc2u6l8nusis66ha9f.apps.googleusercontent.com';
-
-const discovery = {
-  authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-  tokenEndpoint: 'https://oauth2.googleapis.com/token',
-  revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
-};
 
 export default function Login() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  const [request, response, promptAsync] = useAuthRequest(
-    {
-      clientId: GOOGLE_CLIENT_ID,
-      redirectUri: makeRedirectUri({
-        scheme: 'com.myapp',
-      }),
-      scopes: ['profile', 'email'],
-      responseType: 'code',
-      usePKCE: true,
-    },
-    discovery
-  );
-
-  useEffect(() => {
-    if (response?.type === 'success' && response.params.code) {
-      handleGoogleLogin(response.params.code);
-    }
-  }, [response]);
-
-  const handleGoogleLogin = async (authCode: string) => {
+  // Email login handler
+  const handleEmailLogin = async () => {
     try {
       setLoading(true);
-
-      const tokenResult = await exchangeCodeAsync(
-        {
-          clientId: GOOGLE_CLIENT_ID,
-          code: authCode,
-          redirectUri: makeRedirectUri({ scheme: 'com.myapp' }),
-          extraParams: {
-            code_verifier: request?.codeVerifier || '',
-          },
-        },
-        discovery
-      );
-
-      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: `Bearer ${tokenResult.accessToken}` },
-      });
-
-      if (!userInfoResponse.ok) {
-        throw new Error('Failed to fetch user info');
-      }
-
-      const userInfo = await userInfoResponse.json();
-
-      await SecureStore.setItemAsync('accessToken', tokenResult.accessToken ?? '');
-      await SecureStore.setItemAsync('userInfo', JSON.stringify(userInfo));
-
-      Alert.alert('Success', `Logged in as ${userInfo.name}`);
+      await signInWithEmailAndPassword(auth, email, password);
+      Alert.alert('Login successful!');
       router.replace('/');
-
-    } catch (error) {
-      Alert.alert('Login Failed', error instanceof Error ? error.message : 'Unknown error');
+    } catch (error: any) {
+      Alert.alert('Login Failed', error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLoginPress = async () => {
-    await promptAsync();
-  };
-
   return (
     <View style={styles.container}>
-      <Text style={styles.greeting}>
-        Shopping App will change the way you shop
-      </Text>
+      <Text style={styles.greeting}>Welcome to Shopping App!</Text>
+
+      <TextInput
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+      />
 
       <TouchableOpacity
         style={styles.loginButton}
-        onPress={handleLoginPress}
-        disabled={!request || loading}
+        onPress={handleEmailLogin}
+        disabled={loading}
       >
-        <Text style={styles.buttonText}>
-          {loading ? 'Logging in...' : 'Login with Google'}
-        </Text>
+        <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text> 
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.loginButton, { backgroundColor: '#6C63FF', marginTop: 12 }]}
+        onPress={() => router.replace('./signup')}  // Navigate to the signup page
+      >
+        <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
     </View>
   );
 }
+
+// style Sheet 
 
 const styles = StyleSheet.create({
   container: {
@@ -114,6 +77,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30,
     color: '#984063',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    width: '80%',
+    padding: 10,
+    marginBottom: 12,
+    borderRadius: 8,
+    fontSize: 16,
   },
   loginButton: {
     backgroundColor: '#41436A',

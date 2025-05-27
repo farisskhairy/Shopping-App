@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["app/*"]
+    },
     "types": [
       "babel__traverse",
       "node"
@@ -33,6 +37,7 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
+    "app",
     "src"
   ],
   "exclude": [
