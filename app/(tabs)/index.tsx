@@ -17,12 +17,16 @@ interface Item {
   quantity: number;
   store_name: string;
   store_address: string;
+  store_id: string;
   barcode: string;
   tags: string[];
 }
 
 // Place where app will navigate to as the home page of the app. It is set as the SEARCH page so the home page of the app will be the Search page.
 export default function Index() {
+
+  const router = useRouter();
+
   const [items, setItems] = useState<Item[]>([]);
   const [searchText, setSearchText] = useState("");
   const [lastVisible, setLastVisible] = useState<any>(null);
