@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged, User, updateProfile } from 'firebase/auth';
 import { collection, doc, addDoc, getDoc, updateDoc, increment, Timestamp, serverTimestamp, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../../firebaseConfig';
+import { app, auth, db, storage } from '../../firebaseConfig';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image,} from 'react-native';
 
 type AppUser = {
@@ -25,8 +25,6 @@ type Comment = {
   likes: number;
   dislikes: number;
 };
-
-const auth = getAuth();
 
 export const Post = () => {
   const [user, setUser] = useState<AppUser | null>(null);
