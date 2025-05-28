@@ -1,15 +1,29 @@
+
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, FlatList, StyleSheet, Button, ActivityIndicator, ScrollView, Pressable } from "react-native";
-import { collection, getDocs, query, orderBy, limit, startAfter } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, limit, startAfter, doc, getDoc } from "firebase/firestore";
+import { db } from "firebaseConfig";
 import { useRouter } from 'expo-router';
-import { db } from "../../firebaseConfig";
 
 const PAGE_SIZE = 20
 
+
+interface Item {
+  id: string;
+  name: string;
+  brand: string;
+  sale_price: number;
+  retail_price: number;
+  quantity: number;
+  store_name: string;
+  store_address: string;
+  barcode: string;
+  tags: string[];
+}
+
 // Place where app will navigate to as the home page of the app. It is set as the SEARCH page so the home page of the app will be the Search page.
 export default function Index() {
-  const [items, setItems] = useState<any[]>([]);
-  const [storeNames, setStoreNames] = useState<Record<string, string>>({});
+  const [items, setItems] = useState<Item[]>([]);
   const [searchText, setSearchText] = useState("");
   const [lastVisible, setLastVisible] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -17,26 +31,32 @@ export default function Index() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [allTags, setAllTags] = useState<string[]>([]);
 
-  const router = useRouter();
-
   // Load initial data
   useEffect(() => {
-    loadGroceries();
+    loadItems();
   }, []);
 
-  const loadGroceries = async () => {
+  const loadItems = async () => {
     setLoading(true);
     const q = query(collection(db, "items"), orderBy("name"), limit(PAGE_SIZE));
     const snapshot = await getDocs(q);
-    let groceries: any[] = [];
-    if (snapshot) {
-      for (const docSnap of snapshot.docs) {
-        groceries.push({ ...docSnap.data() });
-      }
-    }
-    setItems(groceries);
+    const loadedItems = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: data.name,
+        brand: data.brand,
+        sale_price: Number(data.sale_price),
+        retail_price: Number(data.retail_price),
+        quantity: data.quantity,
+        store_name: data.store_name,
+        store_address: data.store_address,
+        tags: data.tags || [],
+      };
+    }) as Item[];
+    setItems(loadedItems);
     setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
-    extractTags(groceries);
+    extractTags(loadedItems);
     setLoading(false);
   };
 
@@ -44,29 +64,46 @@ export default function Index() {
     if (!lastVisible || loadingMore) return;
     setLoadingMore(true);
     const q = query(
-      collection(db, "groceries"),
+      collection(db, "items"),
       orderBy("name"),
       startAfter(lastVisible),
       limit(PAGE_SIZE)
     );
     const snapshot = await getDocs(q);
-    let moreGroceries: any[] = [];
-    if (snapshot) {
-      for (const docSnap of snapshot.docs) {
-        moreGroceries.push({ ...docSnap.data() });
-      }
-    }
-    setItems(prev => [...prev, ...moreGroceries]);
+    const moreItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Item[];
+    setItems(prev => [...prev, ...moreItems]);
     setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
-    extractTags(moreGroceries);
+    extractTags(moreItems);
     setLoadingMore(false);
   };
 
+/*
+  const attachStoreNames = async (docs: any[]) => {
+    const newItems: GroceryItem[] = [];
+    const storeCache = { ...storeNames };
 
-  const extractTags = (groceryItems: any[]) => {
+    for (const docSnap of docs) {
+      const data = docSnap.data();
+      const storeId = data.storeId;
+      if (!storeCache[storeId]) {
+        const storeDoc = await getDoc(doc(db, "stores", storeId));
+        if (storeDoc.exists()) {
+          storeCache[storeId] = storeDoc.data().name;
+        } else {
+          storeCache[storeId] = "Unknown Store";
+        }
+      }
+      newItems.push({ id: docSnap.id, ...data, storeName: storeCache[storeId] });
+    }
+
+    setStoreNames(storeCache);
+    return newItems;
+  };
+*/
+  const extractTags = (loadedItems: Item[]) => {
     const tags = new Set(allTags);
-    groceryItems.forEach(item => {
-      item.tags?.forEach((tag: any) => tags.add(tag));
+    loadedItems.forEach(item => {
+      item.tags?.forEach(tag => tags.add(tag));
     });
     setAllTags(Array.from(tags).sort());
   };
@@ -81,7 +118,7 @@ export default function Index() {
         item.brand.toString().toLowerCase().includes(query) ||
         item.quantity.toString().toLowerCase().includes(query) ||
         // item.barcode.includes(query) ||
-        item.tags.some((tag: any) => tag.toString().toLowerCase().includes(query))
+        item.tags.some((tag) => tag.toString().toLowerCase().includes(query))
       );
         matchesTag = selectedTag ? item.tags.includes(selectedTag) : true;
         return matchesText && matchesTag;
@@ -90,11 +127,11 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Search Groceries</Text>
+      <Text style={styles.heading}>Search Items</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Search by name, brand, barcode or tags"
+        placeholder="Search by name, brand, or tags"
         value={searchText}
         onChangeText={setSearchText}
       />
