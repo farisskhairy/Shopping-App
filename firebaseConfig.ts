@@ -17,7 +17,6 @@ const firebaseConfig = {
 // Initialize app only once
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// [Fariss] Added this temporarily because auth is causing exception in my code.
 const auth = getAuth(app);
 
 const db = getFirestore(app);

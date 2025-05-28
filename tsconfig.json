@@ -16,7 +16,7 @@
     ],
 
     "target": "esnext",
-    "module": "esnext",
+    "module": "nodenext",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -27,7 +27,7 @@
     "noEmit": true,
     "incremental": true,
     "jsx": "react-native",
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "baseUrl": ".",
