@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, FlatList, StyleSheet, Button, ActivityIndicator, ScrollView } from "react-native";
+import { View, Text, TextInput, FlatList, StyleSheet, Button, ActivityIndicator, ScrollView, Pressable } from "react-native";
 import { collection, getDocs, query, orderBy, limit, startAfter, doc, getDoc } from "firebase/firestore";
 import { db } from "firebaseConfig";
-import 'expo-router/entry';
+import { useRouter } from 'expo-router';
 
 const PAGE_SIZE = 20
 
@@ -17,12 +17,16 @@ interface Item {
   quantity: number;
   store_name: string;
   store_address: string;
+  store_id: string;
   barcode: string;
   tags: string[];
 }
 
 // Place where app will navigate to as the home page of the app. It is set as the SEARCH page so the home page of the app will be the Search page.
 export default function Index() {
+
+  const router = useRouter();
+
   const [items, setItems] = useState<Item[]>([]);
   const [searchText, setSearchText] = useState("");
   const [lastVisible, setLastVisible] = useState<any>(null);
@@ -110,15 +114,19 @@ export default function Index() {
 
   const filteredItems = items.filter(item => {
     const query = searchText.toLowerCase();
-    const matchesText = (
-      item.name.toLowerCase().includes(query) ||
-      item.brand.toLowerCase().includes(query) ||
-      //item.quantityInPackage.toLowerCase().includes(query) ||
-      //item.barcode.includes(query) ||
-      item.tags.some(tag => tag.toLowerCase().includes(query))
-    );
-    const matchesTag = selectedTag ? item.tags.includes(selectedTag) : true;
-    return matchesText && matchesTag;
+    let matchesText;
+    let matchesTag;
+    if (item) {
+      matchesText = (
+        item.name.toString().toLowerCase().includes(query) ||
+        item.brand.toString().toLowerCase().includes(query) ||
+        item.quantity.toString().toLowerCase().includes(query) ||
+        // item.barcode.includes(query) ||
+        item.tags.some((tag) => tag.toString().toLowerCase().includes(query))
+      );
+        matchesTag = selectedTag ? item.tags.includes(selectedTag) : true;
+        return matchesText && matchesTag;
+    }
   });
 
   return (
@@ -154,15 +162,17 @@ export default function Index() {
           onEndReachedThreshold={0.5}
           ListFooterComponent={loadingMore ? <ActivityIndicator size="small" /> : null}
           renderItem={({ item }) => (
-            <View style={styles.card}>
+            <Pressable style={styles.card} onPress = {() => { router.push(`/edit_item_page?id=${item.id}&name=${item.name}&sale_price=${item.sale_price}&retail_price=${item.retail_price}&brand=${item.brand}&quantity=${item.quantity}&store_name=${item.store_name}&store_id=${item.store_id}&store_address=${item.store_address}&upload=false`); }}>
               <Text style={styles.name}>{item.name}</Text>
               <Text>Brand: {item.brand}</Text>
-              <Text>Price: ${item.sale_price.toFixed(2)}</Text>
+              <Text>Sale Price: ${item.sale_price}</Text>
+              <Text>Retail Price: ${item.retail_price}</Text>
               <Text>Qty: {item.quantity}</Text>
-              <Text>Barcode: {item.barcode}</Text>
+              {/* <Text>Barcode: {item.barcode}</Text> */}
               <Text>Store: {item.store_name}</Text>
-              <Text>Tags: {item.tags.join(", ")}</Text>
-            </View>
+              <Text>Address: {item.store_address}</Text>
+              {/* <Text>Tags: {item.tags.join(", ")}</Text> */}
+            </Pressable>
           )}
         />
       )}
