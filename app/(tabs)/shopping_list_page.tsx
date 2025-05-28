@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, FlatList, StyleSheet, Button, TouchableOpacity } from "react-native";
 import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs, where, getDoc } from "firebase/firestore";
 import { db } from "firebaseConfig";
+import { getAuth } from "firebase/auth";
 
 interface ShoppingItem {
   id: string;
@@ -9,12 +10,17 @@ interface ShoppingItem {
 }
 
 export default function ShoppingListPage() {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [newItemName, setNewItemName] = useState("");
   const [bestStoreResult, setBestStoreResult] = useState<{ store: string; total: number; matchedItems: number; totalItems: number; } | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, "shoppingLists"), orderBy("name"));
+    if (!user) return; 
+
+    const q = query(collection(db, "users", user.uid, "shoppingLists"), orderBy("name"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const itemList: ShoppingItem[] = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -27,15 +33,19 @@ export default function ShoppingListPage() {
   }, []);
 
   const addItem = async () => {
+    if (!user) return;
+
     const trimmed = newItemName.trim();
     if (trimmed) {
-      await addDoc(collection(db, "shoppingLists"), { name: trimmed });
+      await addDoc(collection(db, "users", user.uid, "shoppingLists"), { name: trimmed });
       setNewItemName("");
     }
   };
 
   const deleteItem = async (id: string) => {
-    await deleteDoc(doc(db, "shoppingLists", id));
+    if (!user) return;
+
+    await deleteDoc(doc(db, "users", user.uid, "shoppingLists", id));
   };
 
   //Finds the best possible store based on a partial match or complete match
@@ -45,10 +55,12 @@ export default function ShoppingListPage() {
     const storeIdToName: Record<string, string> = {};
     const storeMatchedItems: Record<string, Set<string>> = {};
   
-    for (const item of items) {
-      const q = query(collection(db, "items"), where("name", "==", item.name));
+    const uniqueNames = [...new Set(items.map(item => item.name.trim()))];
+  
+    for (const name of uniqueNames) {
+      const q = query(collection(db, "items"), where("name", "==", name));
       const snapshot = await getDocs(q);
-      console.log(`Matching items for "${item.name}":`, snapshot.docs.map(doc => doc.data()));
+      console.log(`Matching items for "${name}":`, snapshot.docs.map(doc => doc.data()));
   
       for (const docSnap of snapshot.docs) {
         const data = docSnap.data();
@@ -58,24 +70,25 @@ export default function ShoppingListPage() {
   
         if (!storeId || typeof price !== "number") continue;
   
-        // No need to query Firestore for store name — use directly
         if (!storeIdToName[storeId]) {
           storeIdToName[storeId] = storeName ?? "Unknown Store";
         }
   
+        //Add item price to total for that store
         storeTotals[storeId] = (storeTotals[storeId] || 0) + price;
   
+        //Track which items have been matched per store
         if (!storeMatchedItems[storeId]) {
           storeMatchedItems[storeId] = new Set();
         }
-        if (!storeMatchedItems[storeId].has(item.name)) {
-          storeMatchedItems[storeId].add(item.name);
+        if (!storeMatchedItems[storeId].has(name)) {
+          storeMatchedItems[storeId].add(name);
           storeMatchCounts[storeId] = (storeMatchCounts[storeId] || 0) + 1;
         }
       }
     }
   
-    // Find the store with the lowest total
+    //Find store with lowest total
     let bestStoreId: string | null = null;
     let minTotal = Infinity;
   
@@ -90,13 +103,24 @@ export default function ShoppingListPage() {
       setBestStoreResult({
         store: storeIdToName[bestStoreId],
         total: minTotal,
-        matchedItems: storeMatchCounts[bestStoreId],
-        totalItems: items.length,
+        matchedItems: storeMatchCounts[bestStoreId] || 0,
+        totalItems: uniqueNames.length,
       });
     } else {
       setBestStoreResult(null);
     }
   };
+  
+  
+
+  //User is not authenticated - requests login
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.heading}>Please log in to view your shopping list.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
