@@ -34,16 +34,17 @@ export const Post = () => {
   const [commentText, setCommentText] = useState<{ [postId: string]: string }>({});
   const [comments, setComments] = useState<{ [key: number]: Comment[] }>({});
   const [isNewestFirst, setIsNewestFirst] = useState(true);
+
   
   // fetch user data 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser){
-        try{
+      if (currentUser) {
+        try {
           const userDocRef = doc(db, 'users', currentUser.uid);
           const userDoc = await getDoc(userDocRef);
 
-          if (userDoc.exists()){
+          if (userDoc.exists()) {
             const data = userDoc.data();
             setUser({
               name: data.name || '',
@@ -57,15 +58,15 @@ export const Post = () => {
               photoUrl: currentUser.photoURL || '',
             });
           }
-        } catch (error){
-          console.error ('Failed to fetch user profile', error);
+        } catch (error) {
+          console.error('Failed to fetch user profile', error);
         }
-      }else {
+      } else {
         setUser(null);
       }
     });
     return () => unsubscribe();
-  }, [] );
+  }, []);
 
 
   // post with sort order
@@ -113,7 +114,10 @@ export const Post = () => {
   
   // new post 
   const handleSubmitPost = async () => {
-    if (!user) return;
+    if (!user) {
+      alert("Please sign in to post.");
+      return;
+    }
 
     if (postContent.trim() === '') {
       setErrorMessage('Post cannot be empty!');
@@ -139,6 +143,12 @@ export const Post = () => {
 
     // add comments to post 
   const handleAddComment = async (postId: string, commentText: string, userId?: string) => {
+
+    if (!user) {
+      alert("Please sign in to comment.");
+      return;
+    }
+
     if (!userId) {
       console.warn("Cannot add comment without user ID");
       return;
@@ -177,16 +187,22 @@ export const Post = () => {
     setIsNewestFirst(!isNewestFirst);
   };
 
-  if (!user) {
-    return (
-      <View>
-        <Text>Loading user info...</Text>
-      </View>
-    );
-  }
+  // if (!user) {
+  //   return (
+  //     <View>
+  //       <Text>Loading user info...</Text>
+  //     </View>
+  //   );
+  // }
 
   // likes  - post 
   const handleLikePost = async (postId: string) => {
+
+    if (!user) {
+      alert("Please sign in to like the post.");
+      return;
+    }
+
     try{
       const postRef = doc(db, 'posts', postId);
       await updateDoc(postRef, {
@@ -199,6 +215,12 @@ export const Post = () => {
 
   // dislike post 
   const handleDislikePost = async (postId: string) => {
+
+    if (!user) {
+      alert("Please sign in.");
+      return;
+    }
+
     try{
       const postRef = doc(db, 'posts', postId);
       await updateDoc(postRef, {
@@ -212,6 +234,12 @@ export const Post = () => {
 
   // likes  - comments  
   const handleLikeComment = async (postId: string, commentId: string) => {
+
+    if (!user) {
+      alert("Please sign in to like comment.");
+      return;
+    }
+
     try {
       const commentRef = doc(db, 'posts', postId, 'comments', commentId);
       await updateDoc(commentRef, {
@@ -224,6 +252,12 @@ export const Post = () => {
 
     // dislikes  - comments  
   const handleDislikeComment = async (postId: string, commentId: string) => {
+
+    if (!user) {
+      alert("Please sign in.");
+      return;
+    }
+
     try {
       const commentRef = doc(db, 'posts', postId, 'comments', commentId);
       await updateDoc(commentRef, {
@@ -286,10 +320,13 @@ export const Post = () => {
               keyExtractor={(comment, index) => comment.text + index.toString()}
               renderItem={({ item: comment }) => (
                 <View style={styles.commentItem}>
-                  <Image
-                    source={{ uri: item.photoUrl }}
-                    style={styles.photoUrl}
-                  />
+                  { item.photoUrl !== "" ?
+                    <Image
+                      source={{ uri: item.photoUrl }}
+                      style={styles.photoUrl}
+                    /> :
+                    null
+                  }
                   <View style={styles.commentTextContainer}>
                     <Text style={styles.commentUsername}>{item.username}</Text>
 

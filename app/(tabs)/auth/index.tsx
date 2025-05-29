@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, query, collection, where, getDocs } from 'firebase/firestore';
-import { app } from '../../firebaseConfig';
+import { app, auth } from 'firebaseConfig';
 import { router } from 'expo-router';
 
 // profile information 
@@ -71,13 +71,16 @@ export const ProfilePage = () => {
     await setDoc(userRef, newProfile, { merge: true });
   };
 
+  const auth = getAuth();
+  const user = auth.currentUser;
+
   useEffect(() => {
-    const auth = getAuth();
-    const user = auth.currentUser;
 
     if (user) {
       setCurrentUser(user);
       loadProfileFromFirestore(user);
+    } else {
+      router.push("/auth/login");
     }
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -163,6 +166,7 @@ export const ProfilePage = () => {
   const handleSignOut = async () => {
     try {
       await SecureStore.deleteItemAsync('accessToken');
+      signOut(auth);
       router.replace('/auth/login');
     } catch (error) {
       console.error('Error signing out:', error);

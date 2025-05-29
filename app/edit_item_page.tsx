@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Pressable, TextInput, Text, SafeAreaView } from "react-native";
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from "expo-image";
-import { doc, setDoc, collection } from 'firebase/firestore';
+import { doc, setDoc, collection, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Fontisto from '@expo/vector-icons/Fontisto';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { db, storage } from "../firebaseConfig";
+import { db, storage, auth } from "../firebaseConfig";
+import { onAuthStateChanged } from 'firebase/auth';
 
 
 // Page that displays item information from database, and also allows changing of item information in database.
@@ -32,6 +33,39 @@ export default function Edit_Item_Page() {
     // Barcode state variable to update screen.
     const [new_barcode, barcode_input] = useState("");
     const [current_upload, start_upload]= useState<any>(null);
+
+    const [user, setUser] = useState<any>(null);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                try {
+                    const userDocRef = doc(db, 'users', currentUser.uid);
+                    const userDoc = await getDoc(userDocRef);
+
+                    if (userDoc.exists()) {
+                        const data = userDoc.data();
+                        setUser({
+                            name: data.name || '',
+                            photoUrl: data.photoUrl || '',
+                        });
+                    } else {
+                        // console.warn('User profile not found');
+                        // no user info found 
+                        setUser({
+                            name: currentUser.displayName || '',
+                            photoUrl: currentUser.photoURL || '',
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch user profile', error);
+                }
+            } else {
+                setUser(null);
+            }
+        });
+        return () => unsubscribe();
+    }, []);
 
 
     useEffect(() => {
@@ -168,7 +202,15 @@ export default function Edit_Item_Page() {
                 <Pressable onPress = { () => { router.push("/"); } }>
                     <Fontisto name="arrow-left-l" size={29.6} color="black" />
                 </Pressable>
-                <Pressable onPress = { () => { start_upload(true); } }>
+                <Pressable onPress = { () => { 
+                            if (user === null) { 
+                                alert("Please sign in.") 
+                            } else { 
+                                start_upload(true); 
+                                } 
+                        } 
+                    }
+                >
                     <AntDesign name="checkcircleo" size={33.2} color="black"/>
                 </Pressable>
                 

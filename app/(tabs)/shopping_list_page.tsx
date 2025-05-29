@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, FlatList, StyleSheet, Button, TouchableOpacity } from "react-native";
-import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs, where, getDoc } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs, where } from "firebase/firestore";
 import { db } from "firebaseConfig";
 import { getAuth } from "firebase/auth";
 
@@ -30,7 +30,7 @@ export default function ShoppingListPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const addItem = async () => {
     if (!user) return;

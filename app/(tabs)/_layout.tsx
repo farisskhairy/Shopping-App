@@ -44,7 +44,7 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="user_account_page"
+                name="auth"
                 options={{ 
                     title: 'Profile',
                     tabBarIcon: ({ color, focused }) => (

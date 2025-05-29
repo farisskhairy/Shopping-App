@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Pressable, TextInput, Keyboard, Text } from "react-native";
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from "expo-image";
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from 'firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 // Imports for icons
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Fontisto from '@expo/vector-icons/Fontisto';
@@ -29,7 +32,38 @@ export default function Add_Item() {
     const [retail_price, retail_price_input] = useState("");
     const [brand, brand_input] = useState("");
     const [quantity, quantity_input] = useState("");
+    const [user, setUser] = useState<any>(null);
 
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                try {
+                    const userDocRef = doc(db, 'users', currentUser.uid);
+                    const userDoc = await getDoc(userDocRef);
+
+                    if (userDoc.exists()) {
+                        const data = userDoc.data();
+                        setUser({
+                            name: data.name || '',
+                            photoUrl: data.photoUrl || '',
+                        });
+                    } else {
+                        // console.warn('User profile not found');
+                        // no user info found 
+                        setUser({
+                            name: currentUser.displayName || '',
+                            photoUrl: currentUser.photoURL || '',
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch user profile', error);
+                }
+            } else {
+                setUser(null);
+            }
+        });
+        return () => unsubscribe();
+    }, []);
 
     function Picture_Button() {
         if (photo_file !== undefined) {
@@ -121,8 +155,10 @@ export default function Add_Item() {
                             <Text style={styling.text_choose_location_button}>{ abbreviated_store_name }</Text>
                         </Pressable>
                         {/* Add Item button to complete item adding, upload data to database, and navigate to edit_item_page. */}
-                        <Pressable onPress = { () => { 
-                                    if (name === "" || sale_price === "" || retail_price === "" || brand === "" || quantity === "") {
+                        <Pressable onPress = { () => {
+                                    if (user === null) {
+                                        alert("Please sign in before adding.");
+                                    } else if (name === "" || sale_price === "" || retail_price === "" || brand === "" || quantity === "") {
                                         alert("Please fill all information for item!");
                                     } else if (store_name === undefined) {
                                         alert("Please choose a store to select.")
