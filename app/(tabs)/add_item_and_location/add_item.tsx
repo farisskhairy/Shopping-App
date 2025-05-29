@@ -24,11 +24,15 @@ export default function Add_Item() {
     }
 
     // Variables to keep track of various user input.
-    const [name, name_input] = useState("");
+    const { name: initName, brand: initBrand, quantity: initQuantity } = useLocalSearchParams<{
+        name?: string; brand?: string; quantity?: string;
+      }>();
+
+    const [name, name_input] = useState(initName || "");
     const [sale_price, sale_price_input] = useState("");
     const [retail_price, retail_price_input] = useState("");
-    const [brand, brand_input] = useState("");
-    const [quantity, quantity_input] = useState("");
+    const [brand, brand_input] = useState(initBrand || "");
+    const [quantity, quantity_input] = useState(initQuantity || "");
 
 
     function Picture_Button() {
