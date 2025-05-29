@@ -114,13 +114,19 @@ export default function Add_Item() {
                             brand_input("");
                             quantity_input("");
                             // Goes back to previous screen, sets parameters with information to be carried over.
-                            router.back();
                             if (store_name) {
-                                router.setParams({
-                                store_name: store_name,
-                                store_id: store_id,
-                                store_address: store_address
-                            });
+                                router.navigate({
+                                    pathname: "/add_item_and_location",
+                                    params: {
+                                        store_name: store_name,
+                                        store_id: store_id,
+                                        store_address: store_address
+                                    }
+                                });
+                            } else {
+                                router.navigate({
+                                    pathname: "/add_item_and_location",
+                                });
                             }
                         }}
                     >
@@ -144,9 +150,9 @@ export default function Add_Item() {
                         {/* Choose Store button */}
                         <Pressable style={styling.choose_location_button} onPress= {() => {
                                     if (photo_file !== undefined) {
-                                        router.push(`/add_item_and_location/choose_store?photo_file=${photo_file}`);
+                                        router.push(`/add_item_and_location/choose_store?photo_file=${photo_file}&prev=add`);
                                     } else {
-                                        router.push(`/add_item_and_location/choose_store`);
+                                        router.push(`/add_item_and_location/choose_store?prev=add_item`);
                                     }
                                 }
                             }

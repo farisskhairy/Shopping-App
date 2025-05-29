@@ -22,7 +22,7 @@ export default function Add_Item_and_Location_Page() {
     } else if (abbreviated_store_name.length > 30) {
         store_name = abbreviated_store_name.substring(0, 28) + " ..";
     }
-
+    
     return (
         <View style = {styling.whole_area}>
             {/* Button to select manual adding of item information. onPress prop renders manual adding buttons. */}
@@ -51,7 +51,7 @@ export default function Add_Item_and_Location_Page() {
                 <Text style={styling.text_intro_camera_button}>Add through Barcode</Text>
                 <Entypo name="camera" size={32.4} color='black'/>
             </Pressable>
-            <Pressable style={styling.choose_location_button} onPress= {() => router.push("/add_item_and_location/choose_store")}>
+            <Pressable style={styling.choose_location_button} onPress= {() => router.push("/add_item_and_location/choose_store?prev=index")}>
                 <FontAwesome6 name="location-dot" size={16.42} color="black" />
                 <Text style={styling.text_choose_location_button}>{ abbreviated_store_name }</Text>
             </Pressable>
