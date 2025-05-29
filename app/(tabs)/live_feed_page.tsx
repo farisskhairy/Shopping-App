@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged, User, updateProfile } from 'firebase/auth';
-import { collection, doc, addDoc, getDoc, updateDoc, increment, Timestamp, serverTimestamp, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, doc, addDoc, getDoc, updateDoc, increment, Timestamp, serverTimestamp, onSnapshot, query, orderBy, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { app, auth, db, storage } from '../../firebaseConfig';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image,} from 'react-native';
 
 type AppUser = {
+  id: string,
   name: string; 
   photoUrl: string;
 };
@@ -47,6 +48,7 @@ export const Post = () => {
           if (userDoc.exists()) {
             const data = userDoc.data();
             setUser({
+              id: currentUser.uid as string,
               name: data.name || '',
               photoUrl: data.photoUrl || '',
             });
@@ -54,6 +56,7 @@ export const Post = () => {
             // console.warn('User profile not found');
             // no user info found 
             setUser({
+              id: currentUser.uid as string,
               name: currentUser.displayName || '',
               photoUrl: currentUser.photoURL || '',
             });
@@ -132,6 +135,7 @@ export const Post = () => {
         username: user.name,
         photoUrl: user.photoUrl,
         createdAt: Timestamp.now(),
+        createdBy: user.id
       });
       setPostContent('');
       setErrorMessage('');
@@ -205,9 +209,23 @@ export const Post = () => {
 
     try{
       const postRef = doc(db, 'posts', postId);
-      await updateDoc(postRef, {
-        likes: increment(1),
-      });
+      const postData = (await getDoc(postRef)).data();
+      if (postData) {
+        if (!postData["likedBy"] || !(postData["likedBy"].includes(user.id))) {
+          await updateDoc(postRef, {
+            likes: increment(1),
+            likedBy: arrayUnion(user.id)
+          });
+          if (postData["dislikedBy"] && postData["dislikedBy"].includes(user.id)) {
+            await updateDoc(postRef, {
+              dislikes: increment(-1),
+              dislikedBy: arrayRemove(user.id)
+            });
+          }
+        } else {
+          alert("You have already liked the post.");
+        }
+      }
     } catch (error) {
       console.error('Failed to like post:', error);
     }
@@ -223,9 +241,23 @@ export const Post = () => {
 
     try{
       const postRef = doc(db, 'posts', postId);
-      await updateDoc(postRef, {
-        dislikes: increment(1),
-      });
+      const postData = (await getDoc(postRef)).data();
+      if (postData) {
+        if (!postData["dislikedBy"] || !(postData["dislikedBy"].includes(user.id))) {
+          await updateDoc(postRef, {
+            dislikes: increment(1),
+            dislikedBy: arrayUnion(user.id)
+          });
+          if (postData["likedBy"] && postData["likedBy"].includes(user.id)) {
+            await updateDoc(postRef, {
+              likes: increment(-1),
+              likedBy: arrayRemove(user.id)
+            });
+          }
+        } else {
+          alert("You have already liked/disliked the post.");
+        }
+      }
     } catch (error) {
       console.error('Failed to dislike post:', error);
     }
@@ -242,9 +274,23 @@ export const Post = () => {
 
     try {
       const commentRef = doc(db, 'posts', postId, 'comments', commentId);
-      await updateDoc(commentRef, {
-        likes: increment(1),
-      });
+      const commentData = (await getDoc(commentRef)).data();
+      if (commentData) {
+        if (!commentData["likedBy"] || !(commentData["likedBy"].includes(user.id))) {
+          await updateDoc(commentRef, {
+            likes: increment(1),
+            likedBy: arrayUnion(user.id)
+          });
+          if (commentData["dislikedBy"] && commentData["dislikedBy"].includes(user.id)) {
+            await updateDoc(commentRef, {
+              dislikes: increment(-1),
+              dislikedBy: arrayRemove(user.id)
+            });
+          }
+        } else {
+          alert("You have already liked the comment.");
+        }
+      }
     } catch (error) {
       console.error('Failed to like comment:', error);
     }
@@ -260,9 +306,23 @@ export const Post = () => {
 
     try {
       const commentRef = doc(db, 'posts', postId, 'comments', commentId);
-      await updateDoc(commentRef, {
-        dislikes: increment(1),
-      });
+      const commentData = (await getDoc(commentRef)).data();
+      if (commentData) {
+        if (!commentData["dislikedBy"] || !(commentData["dislikedBy"].includes(user.id))) {
+          await updateDoc(commentRef, {
+            dislikes: increment(1),
+            dislikedBy: arrayUnion(user.id)
+          });
+          if (commentData["likedBy"] && commentData["likedBy"].includes(user.id)) {
+            await updateDoc(commentRef, {
+              likes: increment(-1),
+              likedBy: arrayRemove(user.id)
+            });
+          }
+        } else {
+          alert("You have already liked/disliked the comment.");
+        }
+      }
     } catch (error) {
       console.error('Failed to dislike comment:', error);
     }
