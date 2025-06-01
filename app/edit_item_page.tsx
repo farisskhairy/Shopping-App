@@ -141,9 +141,20 @@ export default function Edit_Item_Page() {
                     if (new_store_name === "") {
                         upload_store_name = store_name;
                     }
-                    // if (new_tag === "") {
-
-                    // }
+                    if (new_tag === "") {
+                        if (process_tags()["tag_array"]) {
+                            upload_tag = process_tags()["tag_array"];
+                        } else {
+                            upload_tag = [];
+                        }
+                    } 
+                    else {
+                        try {
+                            upload_tag = upload_tag.split(",").map((item: any) => item.trim());
+                        } catch (exception) {
+                            console.log(exception);
+                        }
+                    }
                     await setDoc(item_key, {
                         id: item_key.id,
                         name: upload_name,
@@ -154,6 +165,7 @@ export default function Edit_Item_Page() {
                         store_name: upload_store_name,
                         store_address: store_address,
                         store_id: store_id,
+                        tags: upload_tag
                         // barcode: upload_barcode
                     },
                     {
@@ -256,7 +268,7 @@ export default function Edit_Item_Page() {
             processed_tags_array = tags.split("-");
             processed_tags_string = processed_tags_array.join(", ");
         }
-        return processed_tags_string;
+        return { tag_string: processed_tags_string, tag_array: processed_tags_array };
     }
 
     return (
@@ -305,7 +317,7 @@ export default function Edit_Item_Page() {
                         <TextInput style={ styling.item_text } placeholder={ store_name } onChangeText={ store_input } value={ new_store_name } textAlign="center" placeholderTextColor="black"/>
                     </View>
                     <View style = {styling.item_data}>
-                        <TextInput style={ styling.item_text } placeholder={ process_tags() !== undefined ? process_tags() : "Tags (optional)" } onChangeText={ tag_input } value={ new_tag } textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={ styling.item_text } placeholder={ process_tags()["tag_string"] !== undefined ? process_tags()["tag_string"] : "Tags (optional)" } onChangeText={ tag_input } value={ new_tag } textAlign="center" placeholderTextColor="black"/>
                     </View>
                     <View style = {styling.item_data}>
                         <TextInput style={ styling.item_text } placeholder={ "Barcode (optional)" } onChangeText={ barcode_input } value={ new_barcode } textAlign="center" placeholderTextColor="black"/>
