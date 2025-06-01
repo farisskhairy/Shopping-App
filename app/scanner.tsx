@@ -10,11 +10,13 @@ export default function Scanner() {
   const { store_id, store_name, store_address } = useLocalSearchParams<{ store_id?: string; store_name?: string; store_address?: string }>();
   const [cameraPermission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
-  const [scanned, setScanned] = useState(false);
+  const scannedRef = useRef(false);
+  //const [scanned, setScanned] = useState(false);
 
   const handleBarcodeScanned = async (result: BarcodeScanningResult) => {
-    if (!result?.data || scanned) return;
-    setScanned(true);
+    if (!result?.data || scannedRef.current) return;
+    scannedRef.current = (true);
+    console.log("Barcode scanned:", result.data);
 
     const barcode = result.data;
     try {
@@ -26,16 +28,17 @@ export default function Scanner() {
         const name = encodeURIComponent(product.product_name || "");
         const brand = encodeURIComponent(product.brands || "");
         const quantity = encodeURIComponent(product.quantity || "");
-        const barcode = encodeURIComponent(result.data);
+        const encodedBarcode = encodeURIComponent(barcode);
 
-        router.push(`/add_item_and_location/add_item?store_id=${store_id}&store_name=${store_name}&store_address=${store_address}&name=${name}&brand=${brand}&quantity=${quantity}&barcode=${barcode}`);
+        
+        router.push(`/add_item_and_location/add_item?store_id=${store_id}&store_name=${store_name}&store_address=${store_address}&name=${name}&brand=${brand}&quantity=${quantity}&barcode=${encodedBarcode}`);
       } else {
         Alert.alert("Item not found", "No product found for that barcode.");
-        setScanned(false);
+        setTimeout(() => (scannedRef.current = false), 2000);
       }
     } catch (err) {
       Alert.alert("Error", "Failed to fetch product data.");
-      setScanned(false);
+      setTimeout(() => (scannedRef.current = false), 2000);
     }
   };
 
