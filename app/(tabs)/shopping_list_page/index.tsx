@@ -38,7 +38,7 @@ export default function ShoppingListPage() {
     if (!user) return;
 
     const q = query(
-      collection(db, "users", user.uid, "shoppingLists"),
+      collection(db, "users", user.uid, "shoppingList"),
       orderBy("name")
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -57,7 +57,7 @@ export default function ShoppingListPage() {
 
     const trimmed = newItemName.trim();
     if (trimmed) {
-      await addDoc(collection(db, "users", user.uid, "shoppingLists"), {
+      await addDoc(collection(db, "users", user.uid, "shoppingList"), {
         name: trimmed,
       });
       setNewItemName("");
@@ -66,7 +66,7 @@ export default function ShoppingListPage() {
 
   const deleteItem = async (id: string) => {
     if (!user) return;
-    await deleteDoc(doc(db, "users", user.uid, "shoppingLists", id));
+    await deleteDoc(doc(db, "users", user.uid, "shoppingList", id));
   };
 
   const loadAndNavigateToBestStore = async () => {
