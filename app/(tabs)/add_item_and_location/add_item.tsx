@@ -16,7 +16,7 @@ export default function Add_Item() {
 
     const router = useRouter();
 
-    let { store_id, store_name, store_address, photo_file, paramBarcode } = useLocalSearchParams<{ store_id?: string; store_name?: string; store_address?: string; photo_file?: string; paramBarcode?: string; }>();
+    let { store_id, store_name, store_address, photo_file } = useLocalSearchParams<{ store_id?: string; store_name?: string; store_address?: string; photo_file?: string; }>();
 
     // Trim length of name of store to fit display area. ~ Will reconsider implementation soon.
     let abbreviated_store_name = store_name;
@@ -34,10 +34,10 @@ export default function Add_Item() {
     const [name, name_input] = useState(initName || "");
     const [sale_price, sale_price_input] = useState("");
     const [retail_price, retail_price_input] = useState("");
-    const [brand, brand_input] = useState("");
-    const [quantity, quantity_input] = useState("");
+    const [brand, brand_input] = useState(initBrand || "");
+    const [quantity, quantity_input] = useState(initQuantity || "");
     const [user, setUser] = useState<any>(null);
-    const [barcode, setBarcode] = useState(incomingBarcode || paramBarcode || "")
+    const [barcode, setBarcode] = useState(incomingBarcode || "")
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -175,6 +175,8 @@ export default function Add_Item() {
                                         alert("Please fill all information for item!");
                                     } else if (store_name === undefined) {
                                         alert("Please choose a store to select.")
+                                    } else if (barcode === "") {
+                                        router.push(`/edit_item_page?name=${name}&sale_price=${sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}`);
                                     } else if (photo_file === undefined) {
                                         router.push(`/edit_item_page?name=${name}&sale_price=${sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&barcode=${barcode}&upload=true`);
                                     } else {
