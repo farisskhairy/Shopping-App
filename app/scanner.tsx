@@ -26,8 +26,9 @@ export default function Scanner() {
         const name = encodeURIComponent(product.product_name || "");
         const brand = encodeURIComponent(product.brands || "");
         const quantity = encodeURIComponent(product.quantity || "");
+        const barcode = encodeURIComponent(result.data);
 
-        router.push(`/add_item_and_location/add_item?store_id=${store_id}&store_name=${store_name}&store_address=${store_address}&name=${name}&brand=${brand}&quantity=${quantity}`);
+        router.push(`/add_item_and_location/add_item?store_id=${store_id}&store_name=${store_name}&store_address=${store_address}&name=${name}&brand=${brand}&quantity=${quantity}&barcode=${barcode}`);
       } else {
         Alert.alert("Item not found", "No product found for that barcode.");
         setScanned(false);

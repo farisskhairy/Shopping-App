@@ -16,7 +16,7 @@ export default function Add_Item() {
 
     const router = useRouter();
 
-    let { store_id, store_name, store_address, photo_file } = useLocalSearchParams<{ store_id?: string; store_name?: string; store_address?: string; photo_file?: string }>();
+    let { store_id, store_name, store_address, photo_file, paramBarcode } = useLocalSearchParams<{ store_id?: string; store_name?: string; store_address?: string; photo_file?: string; paramBarcode?: string; }>();
 
     // Trim length of name of store to fit display area. ~ Will reconsider implementation soon.
     let abbreviated_store_name = store_name;
@@ -27,8 +27,8 @@ export default function Add_Item() {
     }
 
     // Variables to keep track of various user input.
-    const { name: initName, brand: initBrand, quantity: initQuantity } = useLocalSearchParams<{
-        name?: string; brand?: string; quantity?: string;
+    const { name: initName, brand: initBrand, quantity: initQuantity, barcode: incomingBarcode } = useLocalSearchParams<{
+        name?: string; brand?: string; quantity?: string; barcode?: string;
       }>();
 
     const [name, name_input] = useState(initName || "");
@@ -37,6 +37,7 @@ export default function Add_Item() {
     const [brand, brand_input] = useState("");
     const [quantity, quantity_input] = useState("");
     const [user, setUser] = useState<any>(null);
+    const [barcode, setBarcode] = useState(incomingBarcode || paramBarcode || "")
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -175,9 +176,9 @@ export default function Add_Item() {
                                     } else if (store_name === undefined) {
                                         alert("Please choose a store to select.")
                                     } else if (photo_file === undefined) {
-                                        router.push(`/edit_item_page?name=${name}&sale_price=${sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&upload=true`);
+                                        router.push(`/edit_item_page?name=${name}&sale_price=${sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&barcode=${barcode}&upload=true`);
                                     } else {
-                                        router.push(`/edit_item_page?name=${name}&sale_price=${sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&photo_file=${photo_file}&upload=true`);
+                                        router.push(`/edit_item_page?name=${name}&sale_price=${sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&barcode=${barcode}&photo_file=${photo_file}&upload=true`);
                                     }
                                 }
                             }
