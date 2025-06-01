@@ -7,7 +7,6 @@ import Fontisto from '@expo/vector-icons/Fontisto';
 
 
 
-
 export default function Choose_Store() {
 
     // URL Parameter to carry over user-taken photo file.
@@ -91,6 +90,8 @@ export default function Choose_Store() {
                             }
                             if (photo_file !== undefined) {
                                 router.navigate({
+                                    // ts-ignore used to ignore type error from pathname (external library has error)
+                                    // @ts-ignore
                                     pathname: `/add_item_and_location/${prev}`,
                                     params: {
                                         store_id: item.id as string,
@@ -101,6 +102,8 @@ export default function Choose_Store() {
                                 });
                             } else {
                                 router.navigate({
+                                    // ts-ignore used to ignore type error from pathname (external library has error)
+                                    // @ts-ignore
                                     pathname: `/add_item_and_location/${prev}`,
                                     params: {
                                         store_id: item.id as string,

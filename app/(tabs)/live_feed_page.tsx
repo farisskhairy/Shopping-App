@@ -14,8 +14,13 @@ type Post ={
   id: string;
   text: string;
   likes: number;
+  dislikes: number;
   username: string;
   photoUrl: string;
+  createdAt: any,
+  createdBy: any,
+  user_positive_points: any,
+  user_negative_points: any
 };
 
 type Comment = {
@@ -25,6 +30,10 @@ type Comment = {
   photoUrl: string;
   likes: number;
   dislikes: number;
+  createdBy: any,
+  createdAt: any,
+  user_positive_points: any,
+  user_negative_points: any
 };
 
 export const Post = () => {
@@ -35,6 +44,7 @@ export const Post = () => {
   const [commentText, setCommentText] = useState<{ [postId: string]: string }>({});
   const [comments, setComments] = useState<{ [key: number]: Comment[] }>({});
   const [isNewestFirst, setIsNewestFirst] = useState(true);
+  const [update, pushUpdate] = useState<Boolean>(false);
 
   
   // fetch user data 
@@ -76,16 +86,40 @@ export const Post = () => {
   useEffect(() => {
     const postsQuery = query(collection(db, 'posts'), orderBy('createdAt', isNewestFirst ? 'desc' : 'asc'));
     
-    const unsubscribe = onSnapshot(postsQuery, (snapshot) => {
+    const unsubscribe = onSnapshot(postsQuery, async (snapshot) => {
       const postsData = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        createdBy: doc.data().createdBy || "",
+        photoUrl: doc.data().photoUrl || "🙂",
+        createdAt: doc.data().createdAt.toDate().toLocaleString(),
+        user_positive_points: 0,
+        user_negative_points: 0
       }));
+      for (let post of postsData) {
+        if (post["createdBy"] !== "") {
+          try {
+            const userDocRef = doc(db, 'users', post["createdBy"]);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+              const data = userDoc.data();
+              post["photoUrl"] = data.photoUrl;
+              post["user_positive_points"] = data.positive_points_ranking;
+              post["user_negative_points"] = data.negative_points_ranking;
+            }
+            if (post["photoUrl"] === "") {
+              post["photoUrl"] = "🙂";
+            }
+          } catch (exception) {
+            console.log(exception);
+          }
+        }
+      }
       setPosts(postsData);
     });
 
     return () => unsubscribe();
-  }, [isNewestFirst]);
+  }, [isNewestFirst, update]);
 
   //comments 
   useEffect(() => {
@@ -95,15 +129,38 @@ export const Post = () => {
       const commentsRef = collection (db, 'posts', post.id, 'comments');
       const q = query(commentsRef, orderBy ('createdAt', 'asc'));
       
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const unsubscribe = onSnapshot(q, async (snapshot) => {
         const commentsData: Comment[] = snapshot.docs.map((doc) => ({
           id: doc.id,
           text: doc.data().text,
           username: doc.data().username,
-          photoUrl: doc.data().photoUrl,
+          photoUrl: doc.data().photoUrl || "🙂",
           likes: doc.data().likes || 0,
           dislikes: doc.data().dislikes || 0,
+          createdBy: doc.data().createdBy || "",
+          createdAt: doc.data().createdAt.toDate().toLocaleString(),
+          user_positive_points: 0,
+          user_negative_points: 0
         }));
+        for (let comment of commentsData) {
+          if (comment["createdBy"] !== "") {
+            try {
+              const userDocRef = doc(db, 'users', comment["createdBy"]);
+              const userDoc = await getDoc(userDocRef);
+              if (userDoc.exists()) {
+                const data = userDoc.data();
+                comment["photoUrl"] = data.photoUrl;
+                comment["user_positive_points"] = data.positive_points_ranking;
+                comment["user_negative_points"] = data.negative_points_ranking;
+              }
+              if (comment["photoUrl"] === "") {
+                comment["photoUrl"] = "🙂";
+              }
+            } catch (exception) {
+              console.log(exception);
+            }
+          }
+        }
         setComments(prev => ({ ...prev, [post.id]: commentsData}));
       });
       
@@ -136,6 +193,10 @@ export const Post = () => {
         photoUrl: user.photoUrl,
         createdAt: Timestamp.now(),
         createdBy: user.id
+      });
+      const userRef = doc(db, 'users', user.id);
+      await updateDoc(userRef, {
+        positive_points_ranking: increment(10)
       });
       setPostContent('');
       setErrorMessage('');
@@ -179,8 +240,13 @@ export const Post = () => {
         photoUrl: userData?.photoUrl || '',
         likes: 0,
         dislikes: 0,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        createdBy: userId as string
       });
+      await updateDoc(userDocRef, {
+        positive_points_ranking: increment(5)
+      });
+      pushUpdate(!update);
     } catch (error) {
       console.error('Error adding comment:', error);
     }
@@ -191,15 +257,7 @@ export const Post = () => {
     setIsNewestFirst(!isNewestFirst);
   };
 
-  // if (!user) {
-  //   return (
-  //     <View>
-  //       <Text>Loading user info...</Text>
-  //     </View>
-  //   );
-  // }
-
-  // likes  - post 
+  // Liking a post 
   const handleLikePost = async (postId: string) => {
 
     if (!user) {
@@ -212,6 +270,12 @@ export const Post = () => {
       const postData = (await getDoc(postRef)).data();
       if (postData) {
         if (!postData["likedBy"] || !(postData["likedBy"].includes(user.id))) {
+          if (postData["createdBy"]) {
+            const userRef = doc(db, 'users', postData["createdBy"]);
+            await updateDoc(userRef, {
+              positive_points_ranking: increment(5)
+            });
+          }
           await updateDoc(postRef, {
             likes: increment(1),
             likedBy: arrayUnion(user.id)
@@ -244,6 +308,12 @@ export const Post = () => {
       const postData = (await getDoc(postRef)).data();
       if (postData) {
         if (!postData["dislikedBy"] || !(postData["dislikedBy"].includes(user.id))) {
+          if (postData["createdBy"]) {
+            const userRef = doc(db, 'users', postData["createdBy"]);
+            await updateDoc(userRef, {
+              negative_points_ranking: increment(5)
+            });
+          }
           await updateDoc(postRef, {
             dislikes: increment(1),
             dislikedBy: arrayUnion(user.id)
@@ -264,7 +334,7 @@ export const Post = () => {
   };
 
 
-  // likes  - comments  
+  // Liking a comment
   const handleLikeComment = async (postId: string, commentId: string) => {
 
     if (!user) {
@@ -277,6 +347,12 @@ export const Post = () => {
       const commentData = (await getDoc(commentRef)).data();
       if (commentData) {
         if (!commentData["likedBy"] || !(commentData["likedBy"].includes(user.id))) {
+          if (commentData["createdBy"]) {
+            const userRef = doc(db, 'users', commentData["createdBy"]);
+            await updateDoc(userRef, {
+              positive_points_ranking: increment(1)
+            });
+          }
           await updateDoc(commentRef, {
             likes: increment(1),
             likedBy: arrayUnion(user.id)
@@ -287,6 +363,7 @@ export const Post = () => {
               dislikedBy: arrayRemove(user.id)
             });
           }
+          pushUpdate(!update);
         } else {
           alert("You have already liked the comment.");
         }
@@ -296,7 +373,7 @@ export const Post = () => {
     }
   };
 
-    // dislikes  - comments  
+    // Dislike a comment
   const handleDislikeComment = async (postId: string, commentId: string) => {
 
     if (!user) {
@@ -309,6 +386,12 @@ export const Post = () => {
       const commentData = (await getDoc(commentRef)).data();
       if (commentData) {
         if (!commentData["dislikedBy"] || !(commentData["dislikedBy"].includes(user.id))) {
+          if (commentData["createdBy"]) {
+            const userRef = doc(db, 'users', commentData["createdBy"]);
+            await updateDoc(userRef, {
+              negative_points_ranking: increment(1)
+            });
+          }
           await updateDoc(commentRef, {
             dislikes: increment(1),
             dislikedBy: arrayUnion(user.id)
@@ -319,15 +402,43 @@ export const Post = () => {
               likedBy: arrayRemove(user.id)
             });
           }
+          pushUpdate(!update);
         } else {
           alert("You have already liked/disliked the comment.");
         }
+
       }
     } catch (error) {
       console.error('Failed to dislike comment:', error);
     }
   };
 
+  function calculate_ranking(positive_points_ranking: any, negative_points_ranking: any) {
+    const points = positive_points_ranking - negative_points_ranking;
+    let rank_name;
+    let rank_emblem;
+    if (points < 500) {
+      rank_name = "Basis";
+      rank_emblem = "🎉";
+    } else if (points < 1000) {
+      rank_name = "Bronze";
+      rank_emblem = "🥉";
+    } else if (points < 1500) {
+      rank_name = "Silver";
+      rank_emblem = "🥈";
+    } else if (points < 2000) {
+      rank_name = "Gold";
+      rank_emblem = "🥇";
+    } else {
+      rank_name = "Diamond";
+      rank_emblem = "💎";
+    }
+    return {
+      points: points,
+      rank_name: rank_name,
+      rank_emblem: rank_emblem
+    };
+  }
 
   return (
     <View style={styles.container}>
@@ -363,7 +474,10 @@ export const Post = () => {
               <Text style={[styles.photoUrl, { fontSize: 24, textAlign: 'center', lineHeight: 32 }]}>
                 {item.photoUrl || ''}
               </Text>
-              <Text style={styles.postUsername}>{item.username}</Text>
+              <View>
+                <Text style={[ styles.postUsername, { flexDirection: "row" } ]}>{item.username}  <Text style = { { color: "gray", fontSize: 11 } }>{calculate_ranking(item.user_positive_points, item.user_negative_points)["points"] >= 0 ? "+" : ""}{calculate_ranking(item.user_positive_points, item.user_negative_points)["points"]} {calculate_ranking(item.user_positive_points, item.user_negative_points)["rank_emblem"]}</Text></Text>
+                <Text style={[styles.postUsername, { fontSize: 15 }]}>{item.createdAt}</Text>
+              </View>
             </View>
             <Text style={styles.postText}>{item.text}</Text>
 
@@ -380,16 +494,12 @@ export const Post = () => {
               keyExtractor={(comment, index) => comment.text + index.toString()}
               renderItem={({ item: comment }) => (
                 <View style={styles.commentItem}>
-                  { item.photoUrl !== "" ?
-                    <Image
-                      source={{ uri: item.photoUrl }}
-                      style={styles.photoUrl}
-                    /> :
-                    null
-                  }
+                <Text style={[styles.photoUrl, { fontSize: 24, textAlign: 'center', lineHeight: 32 }]}>
+                  {comment.photoUrl || ''}
+                </Text>
                   <View style={styles.commentTextContainer}>
-                    <Text style={styles.commentUsername}>{item.username}</Text>
-
+                    <Text style={[ styles.commentUsername, { flexDirection: "row" }]}>{comment.username}  <Text style = { { color: "gray", fontSize: 11 } }>{calculate_ranking(comment.user_positive_points, comment.user_negative_points)["points"] >= 0 ? "+" : ""}{calculate_ranking(comment.user_positive_points, comment.user_negative_points)["points"]} {calculate_ranking(comment.user_positive_points, comment.user_negative_points)["rank_emblem"]}</Text></Text>
+                    <Text style={styles.commentUsername}>{comment.createdAt}</Text>
                     <Text style={styles.commentText}>{comment.text}</Text>
                       
                       <TouchableOpacity onPress={() => handleLikeComment(item.id, comment.id)}>

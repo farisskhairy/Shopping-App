@@ -44,6 +44,7 @@ export default function Add_Item() {
                     if (userDoc.exists()) {
                         const data = userDoc.data();
                         setUser({
+                            id: currentUser.uid as string,
                             name: data.name || '',
                             photoUrl: data.photoUrl || '',
                         });
@@ -51,6 +52,7 @@ export default function Add_Item() {
                         // console.warn('User profile not found');
                         // no user info found 
                         setUser({
+                            id: currentUser.uid as string,
                             name: currentUser.displayName || '',
                             photoUrl: currentUser.photoURL || '',
                         });
@@ -150,7 +152,7 @@ export default function Add_Item() {
                         {/* Choose Store button */}
                         <Pressable style={styling.choose_location_button} onPress= {() => {
                                     if (photo_file !== undefined) {
-                                        router.push(`/add_item_and_location/choose_store?photo_file=${photo_file}&prev=add`);
+                                        router.push(`/add_item_and_location/choose_store?photo_file=${photo_file}&prev=add_item`);
                                     } else {
                                         router.push(`/add_item_and_location/choose_store?prev=add_item`);
                                     }

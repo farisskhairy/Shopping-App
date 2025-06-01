@@ -27,6 +27,8 @@ export default function Signup() {
         photoUrl: '',
         friends: [],
         shoppingList: [],
+        positive_points_ranking: 0,
+        negative_points_ranking: 0
     });
 
     Alert.alert('Signup successful!');

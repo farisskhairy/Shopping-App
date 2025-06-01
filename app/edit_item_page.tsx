@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Pressable, TextInput, Text, SafeAreaView } from "react-native";
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from "expo-image";
-import { doc, setDoc, collection, getDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, getDoc, updateDoc, increment, addDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Fontisto from '@expo/vector-icons/Fontisto';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -18,8 +18,8 @@ export default function Edit_Item_Page() {
     // Various URL parameters to carry over information. Quite long and tedious, but tried to use local storage, specifically AsyncStorage library
     // but that caused more issues so sticking to this right now.
     // For Steve = once barcode scanner is implemented, pass barcode information through barcode URL parameter here.
-    let { name, sale_price, retail_price, brand, quantity, store_name, store_id, store_address, photo_file, upload, barcode, id } = 
-        useLocalSearchParams<{ name?: string; sale_price?: string; retail_price?: string; brand?: string; quantity?: string; store_name?: string; store_id?: string; store_address?: string; photo_file?: string; upload?: string; barcode?: string; id?: string }>();
+    let { name, sale_price, retail_price, brand, quantity, store_name, store_id, store_address, photo_file, upload, barcode, id, tags } = 
+        useLocalSearchParams<{ name?: string; sale_price?: string; retail_price?: string; brand?: string; quantity?: string; store_name?: string; store_id?: string; store_address?: string; photo_file?: string; upload?: string; barcode?: string; id?: string; tags?: string }>();
 
     const [item_key, set_item_key] = useState("");
     const [new_name, name_input] = useState("");
@@ -32,7 +32,7 @@ export default function Edit_Item_Page() {
     const [new_tag, tag_input] = useState("");
     // Barcode state variable to update screen.
     const [new_barcode, barcode_input] = useState("");
-    const [current_upload, start_upload]= useState<any>(null);
+    const [current_upload, start_upload]= useState<any>(false);
 
     const [user, setUser] = useState<any>(null);
 
@@ -46,13 +46,32 @@ export default function Edit_Item_Page() {
                     if (userDoc.exists()) {
                         const data = userDoc.data();
                         setUser({
+                            id: currentUser.uid as string,
                             name: data.name || '',
                             photoUrl: data.photoUrl || '',
                         });
+                        if (upload === "true" && current_upload === false) {
+                            try {
+                                await updateDoc(userDocRef, {
+                                    positive_points_ranking: increment(100)
+                                });
+                                await addDoc(collection(db, "posts"), {
+                                    text: `[Added New Item] Name = ${name}, Sale Price = $${sale_price}, Retail Price = $${retail_price}, Brand = ${brand}, Location = ${store_name}`,
+                                    likes: 0,
+                                    dislikes: 0,
+                                    username: data.name,
+                                    createdAt: Timestamp.now(),
+                                    createdBy: currentUser.uid as string
+                                });
+                            } catch (exception) {
+                                console.log(exception);
+                            }
+                        }
                     } else {
                         // console.warn('User profile not found');
                         // no user info found 
                         setUser({
+                            id: currentUser.uid as string,
                             name: currentUser.displayName || '',
                             photoUrl: currentUser.photoURL || '',
                         });
@@ -102,6 +121,8 @@ export default function Edit_Item_Page() {
                     let upload_brand: any = new_brand;
                     let upload_quantity: any = new_quantity;
                     let upload_store_name: any = new_store_name;
+                    let upload_barcode: any = new_barcode;
+                    let upload_tag: any = new_tag;
                     if (new_name === "") {
                         upload_name = name;
                     }
@@ -120,6 +141,9 @@ export default function Edit_Item_Page() {
                     if (new_store_name === "") {
                         upload_store_name = store_name;
                     }
+                    // if (new_tag === "") {
+
+                    // }
                     await setDoc(item_key, {
                         id: item_key.id,
                         name: upload_name,
@@ -130,13 +154,29 @@ export default function Edit_Item_Page() {
                         store_name: upload_store_name,
                         store_address: store_address,
                         store_id: store_id,
-                        // barcode: barcode
+                        // barcode: upload_barcode
                     },
                     {
                         merge: true 
                     });
                     alert("Item saved.");
                     start_upload(false);
+                    try {
+                        const userDocRef = doc(db, 'users', user.id);
+                        await updateDoc(userDocRef, {
+                            positive_points_ranking: increment(50)
+                        });
+                        await addDoc(collection(db, "posts"), {
+                            text: `[Updated Item] ${upload_name}, Sale Price = $${upload_sale_price}, Retail Price = $${upload_retail_price}, Brand = ${upload_brand}`,
+                            likes: 0,
+                            dislikes: 0,
+                            username: user.name,
+                            createdAt: Timestamp.now(),
+                            createdBy: user.id
+                        });
+                    } catch (exception) {
+                        console.log(exception);
+                    }
                     router.setParams({
                         name: upload_name, 
                         sale_price: upload_sale_price,
@@ -149,6 +189,7 @@ export default function Edit_Item_Page() {
                         photo_file: photo_file, 
                         upload: upload,
                         id: id
+                        // barcode: upload_barcode
                     });
                 }
                 // This is if item is being uploaded for the first time.
@@ -168,15 +209,28 @@ export default function Edit_Item_Page() {
                     {
                         merge: true 
                     });
+                    router.setParams({
+                        name: name, 
+                        sale_price: sale_price,
+                        retail_price: retail_price, 
+                        brand: brand, 
+                        quantity: quantity,
+                        store_name: store_name, 
+                        store_id: store_id, 
+                        store_address: store_address, 
+                        photo_file: photo_file, 
+                        upload: "false",
+                        id: item_key.id,
+                        // barcode: barcode
+                    });
                     alert("Item added!");
                 }
                 // Uploads user-taken photo if user took a photo.
-                if (photo_file) {
+                if (photo_file && current_upload === false) {
                     const photo_file_upload = ref(storage, `item_photos/${item_key.id}`);
                     const photo_data = await fetch(photo_file);
                     const photo_data_blob = await photo_data.blob();
                     await uploadBytes(photo_file_upload, photo_data_blob);
-                    console.log("photo");
                 }
             } catch (exception) {
                 console.log(exception);
@@ -187,7 +241,6 @@ export default function Edit_Item_Page() {
         if (upload === "true" || current_upload === true) {
             if (id !== undefined) {
                 upload_item(id);
-                console.log("uploading");
             } else {
                 upload_item("");
             }
@@ -195,6 +248,16 @@ export default function Edit_Item_Page() {
     },
     [current_upload]
     );
+
+    function process_tags() {
+        let processed_tags_array;
+        let processed_tags_string;
+        if (tags) {
+            processed_tags_array = tags.split("-");
+            processed_tags_string = processed_tags_array.join(", ");
+        }
+        return processed_tags_string;
+    }
 
     return (
         <SafeAreaView style = {styling.whole_area}>
@@ -207,7 +270,7 @@ export default function Edit_Item_Page() {
                                 alert("Please sign in.") 
                             } else { 
                                 start_upload(true); 
-                                } 
+                            } 
                         } 
                     }
                 >
@@ -242,10 +305,10 @@ export default function Edit_Item_Page() {
                         <TextInput style={ styling.item_text } placeholder={ store_name } onChangeText={ store_input } value={ new_store_name } textAlign="center" placeholderTextColor="black"/>
                     </View>
                     <View style = {styling.item_data}>
-                        <TextInput style={ styling.item_text } placeholder={ "Tags" } onChangeText={ name_input } value={ new_tag } textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={ styling.item_text } placeholder={ process_tags() !== undefined ? process_tags() : "Tags (optional)" } onChangeText={ tag_input } value={ new_tag } textAlign="center" placeholderTextColor="black"/>
                     </View>
                     <View style = {styling.item_data}>
-                        <TextInput style={ styling.item_text } placeholder={ "Barcode" } onChangeText={ name_input } value={ new_barcode } textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={ styling.item_text } placeholder={ "Barcode (optional)" } onChangeText={ barcode_input } value={ new_barcode } textAlign="center" placeholderTextColor="black"/>
                     </View>
                 </View>
                 <View style = {styling.picture_area}>

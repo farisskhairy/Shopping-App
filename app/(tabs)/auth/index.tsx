@@ -12,6 +12,8 @@ type Profile = {
   email: string;
   phone: string;
   photoUrl: string;
+  positive_points_ranking: number,
+  negative_points_ranking: number
 };
 
 type EditingState = {
@@ -29,6 +31,8 @@ export const ProfilePage = () => {
     email: '',
     phone: '',
     photoUrl: '',
+    positive_points_ranking: 0,
+    negative_points_ranking: 0
   });
 
   // friend list 
@@ -56,6 +60,8 @@ export const ProfilePage = () => {
       email: user.email || '',
       phone: profileData.phone || '',
       photoUrl: profileData.photoUrl || '',
+      positive_points_ranking: profileData.positive_points_ranking || 0,
+      negative_points_ranking: profileData.negative_points_ranking || 0
     });
 
     setFriends(
@@ -183,8 +189,38 @@ export const ProfilePage = () => {
     await saveProfileToFirestore({ ...profile, photoUrl: emoji });
   };
 
+  function calculate_ranking() {
+    const points = profile.positive_points_ranking - profile.negative_points_ranking;
+    let rank_name;
+    let rank_emblem;
+    if (points < 500) {
+      rank_name = "Basis";
+      rank_emblem = "🎉";
+    } else if (points < 1000) {
+      rank_name = "Bronze";
+      rank_emblem = "🥉";
+    } else if (points < 1500) {
+      rank_name = "Silver";
+      rank_emblem = "🥈";
+    } else if (points < 2000) {
+      rank_name = "Gold";
+      rank_emblem = "🥇";
+    } else {
+      rank_name = "Diamond";
+      rank_emblem = "💎";
+    }
+    return {
+      points: points,
+      rank_name: rank_name,
+      rank_emblem: rank_emblem
+    };
+  }
+  
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.rank_area}>
+        <Text style={styles.rank_text}>Ranking Points: { calculate_ranking()["points"] >= 0 ? "+" : "" }{calculate_ranking()["points"]}, {calculate_ranking()["rank_name"]} {calculate_ranking()["rank_emblem"]}</Text>
+      </View>
       <View style={styles.profileHeader}>
         {profile.photoUrl?.startsWith('http') ? (
           <Image source={{ uri: profile.photoUrl }} style={styles.avatar} />
@@ -427,6 +463,15 @@ const styles = StyleSheet.create({
   lineHeight: 50, 
   backgroundColor: '#eee',
 },
+  rank_area: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: "3%",
+  },
+  rank_text: {
+    color: '#41436A',
+    fontWeight: 'bold'
+  }
 });
 
 export default ProfilePage;
