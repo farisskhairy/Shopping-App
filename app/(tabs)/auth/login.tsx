@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, StyleSheet, TextInput } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, db, storage } from '../../firebaseConfig';
+import { auth, db, storage } from 'firebaseConfig';
 import { useRouter } from 'expo-router';
 
 export default function Login() {
@@ -16,7 +16,7 @@ export default function Login() {
       setLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
       Alert.alert('Login successful!');
-      router.replace('/');
+      router.push("/auth");
     } catch (error: any) {
       Alert.alert('Login Failed', error.message);
     } finally {

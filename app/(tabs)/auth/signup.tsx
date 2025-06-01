@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, StyleSheet, TextInput } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, getFirestore } from 'firebase/firestore';
-import { auth, db, app } from '../../firebaseConfig';  
+import { auth, db, app } from 'firebaseConfig';  
 import { useRouter } from 'expo-router';
 
 export default function Signup() {
@@ -27,10 +27,12 @@ export default function Signup() {
         photoUrl: '',
         friends: [],
         shoppingList: [],
+        positive_points_ranking: 0,
+        negative_points_ranking: 0
     });
 
     Alert.alert('Signup successful!');
-    router.replace('./login');  // go back to login page if user signs up successful 
+    router.push('./login');  // go back to login page if user signs up successful 
   } catch (error: any) {
     Alert.alert('Signup Failed'); // signup failed message 
     console.log('signup up failed', error.message); 
