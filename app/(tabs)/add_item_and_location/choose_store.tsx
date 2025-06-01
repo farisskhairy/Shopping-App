@@ -7,11 +7,10 @@ import Fontisto from '@expo/vector-icons/Fontisto';
 
 
 
-
 export default function Choose_Store() {
 
     // URL Parameter to carry over user-taken photo file.
-    const { photo_file } = useLocalSearchParams<{ photo_file?: string }>();
+    let { photo_file, prev } = useLocalSearchParams<{ photo_file?: string; prev?: string }>();
 
     // API Key for Google Places API.
     const google_places_api_key = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
@@ -86,19 +85,31 @@ export default function Choose_Store() {
                     renderItem = { ({item}) => (
                         <Pressable style = { styling.store } onPress = {() => {
                             // Returns back to previous screen, with information added as parameters.
-                            router.back();
+                            if (prev === "index") {
+                                 prev = "";
+                            }
                             if (photo_file !== undefined) {
-                                router.setParams({
-                                    store_id: item.id as string,
-                                    store_name: item.displayName.text,
-                                    store_address: item.formattedAddress,
-                                    photo_file: photo_file
+                                router.navigate({
+                                    // ts-ignore used to ignore type error from pathname (external library has error)
+                                    // @ts-ignore
+                                    pathname: `/add_item_and_location/${prev}`,
+                                    params: {
+                                        store_id: item.id as string,
+                                        store_name: item.displayName.text,
+                                        store_address: item.formattedAddress,
+                                        photo_file: photo_file
+                                    }
                                 });
                             } else {
-                                router.setParams({
-                                    store_id: item.id as string,
-                                    store_name: item.displayName.text,
-                                    store_address: item.formattedAddress
+                                router.navigate({
+                                    // ts-ignore used to ignore type error from pathname (external library has error)
+                                    // @ts-ignore
+                                    pathname: `/add_item_and_location/${prev}`,
+                                    params: {
+                                        store_id: item.id as string,
+                                        store_name: item.displayName.text,
+                                        store_address: item.formattedAddress,
+                                    }
                                 });
                             }
                         }}>
