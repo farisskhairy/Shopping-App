@@ -165,8 +165,8 @@ export default function Edit_Item_Page() {
                         store_name: upload_store_name,
                         store_address: store_address,
                         store_id: store_id,
-                        tags: upload_tag
-                        // barcode: upload_barcode
+                        tags: upload_tag,
+                        barcode: upload_barcode
                     },
                     {
                         merge: true 
@@ -200,8 +200,8 @@ export default function Edit_Item_Page() {
                         store_address: store_address, 
                         photo_file: photo_file, 
                         upload: upload,
-                        id: id
-                        // barcode: upload_barcode
+                        id: id,
+                        barcode: upload_barcode
                     });
                 }
                 // This is if item is being uploaded for the first time.
@@ -216,7 +216,7 @@ export default function Edit_Item_Page() {
                         store_name: store_name,
                         store_address: store_address,
                         store_id: store_id,
-                        // barcode: barcode
+                        barcode: barcode
                     },
                     {
                         merge: true 
@@ -233,7 +233,7 @@ export default function Edit_Item_Page() {
                         photo_file: photo_file, 
                         upload: "false",
                         id: item_key.id,
-                        // barcode: barcode
+                        barcode: barcode
                     });
                     alert("Item added!");
                 }

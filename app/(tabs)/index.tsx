@@ -122,9 +122,11 @@ export default function Index() {
         item.brand.toString().toLowerCase().includes(query) ||
         item.quantity.toString().toLowerCase().includes(query) ||
         // item.barcode.includes(query) ||
-        item.tags.some((tag) => tag.toString().toLowerCase().includes(query))
+        (Array.isArray(item.tags) && item.tags.some((tag) =>
+        tag.toString().toLowerCase().includes(query)
+        ))
       );
-        matchesTag = selectedTag ? item.tags.includes(selectedTag) : true;
+        matchesTag = selectedTag ? Array.isArray(item.tags) && item.tags.includes(selectedTag) : true;
         return matchesText && matchesTag;
     }
   });
