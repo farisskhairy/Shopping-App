@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 6,
     overflow: "hidden",
-    height: 50,
+    height: 120,
     justifyContent: "center",
   },
   picker: {
