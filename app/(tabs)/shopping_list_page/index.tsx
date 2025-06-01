@@ -27,7 +27,13 @@ interface StoreMatch {
 
 export default function ShoppingListPage() {
   const auth = getAuth();
-  const user = auth.currentUser;
+  const [user, setUser] = useState<any>(null);
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+      setUser(firebaseUser);
+    });
+    return unsubscribe;
+  }, []);
   const router = useRouter();
 
   const [items, setItems] = useState<ShoppingItem[]>([]);
@@ -50,7 +56,7 @@ export default function ShoppingListPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const addItem = async () => {
     if (!user) return;
