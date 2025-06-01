@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { CameraMode, CameraType, CameraView, useCameraPermissions } from "expo-camera";
-import { Button, Pressable, StyleSheet, View } from "react-native";
+import { Button, Pressable, StyleSheet, View, SafeAreaView } from "react-native";
 import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams } from 'expo-router';
 // Imports for icons
@@ -49,9 +49,9 @@ export default function camera_page() {
     // Screen renders a button to ask for camera permission.
     if (!use_camera_permission.granted) {
         return (
-            <View>
+            <SafeAreaView>
                 <Button onPress={request_camera_permission} title="Allow Camera Access"/>
-            </View>
+            </SafeAreaView>
         );
     }
 
