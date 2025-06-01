@@ -31,7 +31,7 @@ export default function Edit_Item_Page() {
     const [new_photo_file, photo_file_input] = useState("");
     const [new_tag, tag_input] = useState("");
     // Barcode state variable to update screen.
-    const [new_barcode, barcode_input] = useState("");
+    const [new_barcode, barcode_input] = useState(barcode || "");
     const [current_upload, start_upload]= useState<any>(false);
 
     const [user, setUser] = useState<any>(null);
