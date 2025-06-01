@@ -39,17 +39,19 @@ export default function Add_Item_and_Location_Page() {
                 <Ionicons name="sparkles-sharp" size={24} color='black'/>
             </Pressable>
             {/* Button for BARCODE SCANNING. Recommend that you use code similar to camera.tsx, but create new file for barcode scanner. */}
-            <Pressable style={styling.intro_camera_button} onPress= {() => {
-                        if (store_name) {
-                            router.push(`/camera?store_id=${store_id}&store_name=${store_name}&store_address=${store_address}`);
-                        } else {
-                            router.push("/camera");
-                        }
-                    }
-                }
+            <Pressable
+                style={styling.intro_camera_button}
+                onPress={() => {
+                    const params = new URLSearchParams();
+                    if (store_id) params.append("store_id", store_id);
+                    if (store_name) params.append("store_name", store_name);
+                    if (store_address) params.append("store_address", store_address);
+
+                    router.push(`/scanner?${params.toString()}`);
+                }}
             >
                 <Text style={styling.text_intro_camera_button}>Add through Barcode</Text>
-                <Entypo name="camera" size={32.4} color='black'/>
+                <Entypo name="camera" size={32.4} color="black" />
             </Pressable>
             <Pressable style={styling.choose_location_button} onPress= {() => router.push("/add_item_and_location/choose_store?prev=index")}>
                 <FontAwesome6 name="location-dot" size={16.42} color="black" />
