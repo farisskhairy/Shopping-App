@@ -121,6 +121,7 @@ export const ProfilePage = () => {
   };
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
   const handleAddFriendSearch = async () => {
     if (!searchQuery.trim()) return;
 
@@ -168,6 +169,22 @@ export const ProfilePage = () => {
       Alert.alert('Error searching friend');
     }
   };
+
+  // option to remove friend 
+  const handleRemoveFriend = async (phoneToRemove: string) => {
+    const updatedFriends = friends.filter(friend => friend.phone !== phoneToRemove);
+    setFriends(updatedFriends);
+    if (currentUser) {
+      try {
+        const userRef = doc(firestore, 'users', currentUser.uid);
+        await setDoc(userRef, { friends: updatedFriends }, { merge: true });
+      } catch (error) {
+        console.error('Error removing friend from Firestore:', error);
+        Alert.alert('Error', 'Failed to remove friend');
+      }
+    }
+  };
+
 
   const handleSignOut = async () => {
     try {
@@ -282,9 +299,29 @@ export const ProfilePage = () => {
               <Text style={styles.friendName}>{friend.name}</Text>
               <Text style={styles.friendPhone}>{friend.phone}</Text>
             </View>
+            <TouchableOpacity
+              onPress={() =>
+                Alert.alert(
+                  'Remove Friend',
+                  `Do you want to remove ${friend.name || friend.phone}?`,
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Remove',
+                      style: 'destructive',
+                      onPress: () => handleRemoveFriend(friend.phone),
+                    },
+                  ]
+                )
+              }
+              style={[styles.removeButton, { backgroundColor: '#984063' }]}
+            >
+              <Text style={styles.removeButtonText}>Remove</Text>
+            </TouchableOpacity>
           </View>
         ))}
       </View>
+      
 
       <TouchableOpacity
         onPress={() => setShowSearchBar(!showSearchBar)}
@@ -412,6 +449,17 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   editButtonText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+    removeButton: {
+    backgroundColor: '#41436A',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginLeft: 100,
+  },
+  removeButtonText: {
     color: '#fff',
     fontSize: 14,
   },

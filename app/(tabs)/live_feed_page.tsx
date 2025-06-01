@@ -33,7 +33,8 @@ type Comment = {
   createdBy: any,
   createdAt: any,
   user_positive_points: any,
-  user_negative_points: any
+  user_negative_points: any,
+  deleted?: boolean,
 };
 
 export const Post = () => {
@@ -43,6 +44,8 @@ export const Post = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [commentText, setCommentText] = useState<{ [postId: string]: string }>({});
   const [comments, setComments] = useState<{ [key: number]: Comment[] }>({});
+  const [editingComment, setEditingComment] = useState<{ [commentId: string]: string }>({});
+  const [editingMode, setEditingMode] = useState<{ [commentId: string]: boolean }>({});
   const [isNewestFirst, setIsNewestFirst] = useState(true);
   const [update, pushUpdate] = useState<Boolean>(false);
 
@@ -253,6 +256,68 @@ export const Post = () => {
     setCommentText(prev => ({ ...prev, [postId]: ''}));
   };
   
+   // edit comments 
+  
+  const handleEditComment = async(postId: string, commentId: string) => {
+    if (!user) {
+      alert("cannot edit comment");
+      return;
+    }
+
+    const newText = editingComment[commentId]?.trim();
+    if(!newText)
+      return;
+
+    try{
+      const commentRef = doc(db, 'posts', postId, 'comments', commentId);
+      const commentSnap = await getDoc(commentRef);
+
+        if (!commentSnap.exists()) {
+          alert("Comment not found.");
+          return;
+        }
+
+        const commentData = commentSnap.data();
+
+        if (commentData?.deleted) {
+          alert("Cannot edit a deleted comment.");
+          return;
+        }
+      
+      await updateDoc( commentRef,{
+        text: newText,
+      }
+      );
+      
+      setEditingMode(prev => ({ ...prev, [commentId]: false}));
+      setEditingComment(prev => ({ ...prev, [commentId]: ''}));
+
+    } catch (error) {
+      console.error('Unable to edit comment:', error);
+    }
+  };
+
+ // delete comments 
+  
+  const handleDeleteComment = async(postId: string, commentId: string) => {
+    if (!user) {
+      alert("cannot delete comment");
+      return;
+    }
+
+    try{
+      const commentRef = doc(db, 'posts', postId, 'comments', commentId);
+      await updateDoc( commentRef,{
+        text: '[comment deleted by user]',
+        deleted: true,
+      }
+      );
+      
+    } catch (error) {
+      console.error('Unable to delete comment:', error);
+    }
+  };
+
   const toggleSortOrder = () => {
     setIsNewestFirst(!isNewestFirst);
   };
@@ -345,7 +410,14 @@ export const Post = () => {
     try {
       const commentRef = doc(db, 'posts', postId, 'comments', commentId);
       const commentData = (await getDoc(commentRef)).data();
+
       if (commentData) {
+
+        if (commentData.deleted) {
+          alert("The comment has been deleted, you cannot like it.");
+          return;
+        }
+
         if (!commentData["likedBy"] || !(commentData["likedBy"].includes(user.id))) {
           if (commentData["createdBy"]) {
             const userRef = doc(db, 'users', commentData["createdBy"]);
@@ -385,6 +457,11 @@ export const Post = () => {
       const commentRef = doc(db, 'posts', postId, 'comments', commentId);
       const commentData = (await getDoc(commentRef)).data();
       if (commentData) {
+        if (commentData.deleted) {
+          alert("The comment has been deleted, you cannot dislike it.");
+          return;
+    }
+
         if (!commentData["dislikedBy"] || !(commentData["dislikedBy"].includes(user.id))) {
           if (commentData["createdBy"]) {
             const userRef = doc(db, 'users', commentData["createdBy"]);
@@ -490,31 +567,87 @@ export const Post = () => {
             </TouchableOpacity>
 
             <FlatList
-              data={comments[item.id] || []}
+              data={(comments[item.id] || [])}
               keyExtractor={(comment, index) => comment.text + index.toString()}
-              renderItem={({ item: comment }) => (
-                <View style={styles.commentItem}>
-                <Text style={[styles.photoUrl, { fontSize: 24, textAlign: 'center', lineHeight: 32 }]}>
-                  {comment.photoUrl || ''}
-                </Text>
-                  <View style={styles.commentTextContainer}>
-                    <Text style={[ styles.commentUsername, { flexDirection: "row" }]}>{comment.username}  <Text style = { { color: "gray", fontSize: 11 } }>{calculate_ranking(comment.user_positive_points, comment.user_negative_points)["points"] >= 0 ? "+" : ""}{calculate_ranking(comment.user_positive_points, comment.user_negative_points)["points"]} {calculate_ranking(comment.user_positive_points, comment.user_negative_points)["rank_emblem"]}</Text></Text>
-                    <Text style={styles.commentUsername}>{comment.createdAt}</Text>
-                    <Text style={styles.commentText}>{comment.text}</Text>
-                      
-                      <TouchableOpacity onPress={() => handleLikeComment(item.id, comment.id)}>
-                        <Text style={{ color: '#984063' }}>Like {comment.likes}</Text>
-                      </TouchableOpacity>
+              renderItem={({ item: comment }) => {
+                const isAuthor = user?.id === comment.createdBy;
+                const isEditing = editingMode[comment.id] && !comment.deleted;
 
-                      <TouchableOpacity onPress={() => handleDislikeComment(item.id, comment.id)}>
-                        <Text style={{ color: '#984063' }}>Dislike {comment.dislikes || 0}</Text>
-                      </TouchableOpacity>
+                return(                      
+                  <View style={styles.commentItem}>
+                  <Text style={[styles.photoUrl, { fontSize: 24, textAlign: 'center', lineHeight: 32 }]}>
+                    {comment.photoUrl || ''}
+                  </Text>
 
+                    <View style={styles.commentTextContainer}>
+                      <Text style={[ styles.commentUsername, { flexDirection: "row" }]}>{comment.username}  
+                        <Text style = { { color: "gray", fontSize: 11 } }>
+                          {" "}
+                          {calculate_ranking(comment.user_positive_points, comment.user_negative_points)["points"] >= 0 ? "+" : ""}
+                          {calculate_ranking(comment.user_positive_points, comment.user_negative_points)["points"]} 
+                          {" "}
+                          {calculate_ranking(comment.user_positive_points, comment.user_negative_points)["rank_emblem"]}
+                        </Text>
+                      </Text>
 
+                      <Text style={styles.commentUsername}>{comment.createdAt}</Text>
+                        {isEditing ? (
+                          <>
+                          <TextInput 
+                            style={[styles.commentText, {borderColor: '#ccc', borderWidth: 1, padding: 5}]}
+                            value={editingComment[comment.id]}
+                            onChangeText={(text) =>
+                              setEditingComment((prev)=> ({ ...prev, [comment.id]: text}))
+                            }
+                          />
+                        <View style={{ flexDirection: "row", marginTop: 4 }}>
+                          <TouchableOpacity onPress={() => handleEditComment(item.id, comment.id)}>
+                            <Text style={{ color: "#4caf50", marginRight: 10 }}> Save</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() =>
+                              setEditingMode((prev) => ({ ...prev, [comment.id]: false }))
+                            }
+                          >
+                            <Text style={{ color: "#f44336" }}> Cancel</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </>
+                    ) : (
+                      <>
 
+                      <Text style={styles.commentText}>{comment.text}</Text>
+
+                        {isAuthor && !comment.deleted && (
+                          <View style={{ flexDirection: "row", marginTop: 4 }}>
+                            <TouchableOpacity
+                              onPress={() => {
+                                setEditingComment((prev) => ({ ...prev, [comment.id]: comment.text }));
+                                setEditingMode((prev) => ({ ...prev, [comment.id]: true }));
+                              }}
+                            >
+                              <Text style={{ color: "#2196f3", marginRight: 10 }}> Edit</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => handleDeleteComment(item.id, comment.id)}>
+                              <Text style={{ color: "#f44336" }}> delete</Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </>
+                    )}
+                    { comment.text !== "[deleted]" && (
+                      <>
+                        <TouchableOpacity onPress={() => handleLikeComment(item.id, comment.id)}>
+                          <Text style={{ color: '#984063' }}>Like {comment.likes}</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => handleDislikeComment(item.id, comment.id)}>
+                          <Text style={{ color: '#984063' }}>Dislike {comment.dislikes || 0}</Text>
+                        </TouchableOpacity>
+                      </>)}
+                    </View>
                   </View>
-                </View>
-              )}
+              )}}
             />
 
             <TextInput
