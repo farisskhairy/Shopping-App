@@ -166,7 +166,9 @@ export default function Edit_Item_Page() {
                         store_address: store_address,
                         store_id: store_id,
                         tags: upload_tag,
-                        barcode: upload_barcode
+                        barcode: upload_barcode,
+                        updatedBy:user?.name || "anonymous",
+                        updatedAt: Timestamp.now()
                     },
                     {
                         merge: true 
@@ -216,7 +218,9 @@ export default function Edit_Item_Page() {
                         store_name: store_name,
                         store_address: store_address,
                         store_id: store_id,
-                        barcode: barcode
+                        barcode: barcode,
+                        updatedBy: user?.name || "anonymous",
+                        updatedAt: Timestamp.now()
                     },
                     {
                         merge: true 
