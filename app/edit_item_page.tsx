@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Pressable, TextInput, Text, SafeAreaView } from "react-native";
+import { View, StyleSheet, Pressable, TextInput, Text, SafeAreaView, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from "expo-image";
 import { doc, setDoc, collection, getDoc, updateDoc, increment, addDoc, Timestamp } from 'firebase/firestore';
@@ -20,7 +20,7 @@ export default function Edit_Item_Page() {
     // For Steve = once barcode scanner is implemented, pass barcode information through barcode URL parameter here.
     let { name, sale_price, retail_price, brand, quantity, store_name, store_id, store_address, photo_file, upload, barcode, id, tags } = 
         useLocalSearchParams<{ name?: string; sale_price?: string; retail_price?: string; brand?: string; quantity?: string; store_name?: string; store_id?: string; store_address?: string; photo_file?: string; upload?: string; barcode?: string; id?: string; tags?: string }>();
-    console.log("URL barcode params:", barcode);
+
     const [item_key, set_item_key] = useState("");
     const [new_name, name_input] = useState("");
     const [new_sale_price, sale_price_input] = useState("");
@@ -193,8 +193,8 @@ export default function Edit_Item_Page() {
                     }
                     router.setParams({
                         name: upload_name, 
-                        sale_price: parseFloat(upload_sale_price),
-                        retail_price: parseFloat(upload_retail_price), 
+                        sale_price: upload_sale_price,
+                        retail_price: upload_retail_price,
                         brand: upload_brand, 
                         quantity: upload_quantity,
                         store_name: upload_store_name, 
@@ -211,14 +211,14 @@ export default function Edit_Item_Page() {
                     await setDoc(item_key, {
                         id: item_key.id,
                         name: name,
-                        sale_price: parseFloat(sale_price) || 0,
-                        retail_price: parseFloat(retail_price) || 0,
+                        sale_price: sale_price ? parseFloat(sale_price) : 0,
+                        retail_price: retail_price ? parseFloat(retail_price) : 0,
                         brand: brand,
                         quantity: quantity,
                         store_name: store_name,
                         store_address: store_address,
                         store_id: store_id,
-                        barcode: barcode,
+                        barcode: barcode ? barcode : "",
                         updatedBy: user?.name || "anonymous",
                         updatedAt: Timestamp.now()
                     },
@@ -227,9 +227,9 @@ export default function Edit_Item_Page() {
                     });
                     router.setParams({
                         name: name, 
-                        sale_price: parseFloat(sale_price),
-                        retail_price: parseFloat(retail_price), 
-                        brand: brand, 
+                        sale_price: sale_price,
+                        retail_price: retail_price, 
+                        brand: brand,
                         quantity: quantity,
                         store_name: store_name, 
                         store_id: store_id, 
@@ -237,7 +237,7 @@ export default function Edit_Item_Page() {
                         photo_file: photo_file, 
                         upload: "false",
                         id: item_key.id,
-                        barcode: barcode
+                        barcode: barcode ? barcode : ""
                     });
                     alert("Item added!");
                 }
@@ -292,7 +292,6 @@ export default function Edit_Item_Page() {
                 >
                     <AntDesign name="checkcircleo" size={33.2} color="black"/>
                 </Pressable>
-                
             </View>
             <View style = {styling.edit_area}>
                 <View style = {styling.item_data_area}>

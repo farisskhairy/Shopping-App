@@ -49,7 +49,7 @@ export const Post = () => {
   const [isNewestFirst, setIsNewestFirst] = useState(true);
   const [update, pushUpdate] = useState<Boolean>(false);
 
-  
+  console.log("testing");
   // fetch user data 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
