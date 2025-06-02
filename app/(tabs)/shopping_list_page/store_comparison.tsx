@@ -3,30 +3,63 @@ import { View, Text, StyleSheet, ScrollView, Button } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { formatDistanceToNow } from "date-fns";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "firebaseConfig";
 
 interface ItemMatchInfo {
   name: string;
   price: number;
   updatedBy: string;
-  updatedAt: string | Date;
+  updatedAt?: Date;
 }
 
 interface StoreMatch {
   id: string;
   name: string;
   address?: string;
-  matchedItems: ItemMatchInfo[];
+  matchedItems: {
+    name: string;
+    price: number;
+  }[];
   total: number;
 }
 
 export default function StoreComparisonScreen() {
   const { storeMatches } = useLocalSearchParams();
   const parsedMatches: StoreMatch[] = storeMatches ? JSON.parse(storeMatches as string) : [];
-
+  const [matchedItemDetails, setMatchedItemDetails] = useState<ItemMatchInfo[]>([]);
   const [selectedStoreId, setSelectedStoreId] = useState(parsedMatches[0]?.id || "");
   const selectedStore = parsedMatches.find((s) => s.id === selectedStoreId);
-
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchItemDetails = async () => {
+      if (!selectedStore) return;
+
+      const itemNames = selectedStore.matchedItems.map((item) => item.name);
+
+      const q = query(collection(db, "items"), where("store_id", "==", selectedStore.id));
+      const snapshot = await getDocs(q);
+
+      const itemsWithMeta: ItemMatchInfo[] = [];
+
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (itemNames.includes(data.name)) {
+          itemsWithMeta.push({
+            name: data.name,
+            price: data.sale_price,
+            updatedBy: typeof data.updatedBy === "string" ? data.updatedBy : "Unknown",
+            updatedAt: data.updatedAt?.toDate?.(),
+          });
+        }
+      });
+
+      setMatchedItemDetails(itemsWithMeta);
+    };
+
+    fetchItemDetails();
+  }, [selectedStoreId]);
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
@@ -55,9 +88,14 @@ export default function StoreComparisonScreen() {
           <Text style={styles.storeName}>{selectedStore.name}</Text>
           {selectedStore.address && <Text style={styles.address}>{selectedStore.address}</Text>}
           <Text style={styles.total}>Total: ${selectedStore.total.toFixed(2)}</Text>
-          {selectedStore.matchedItems.map((item, index) => (
+
+          {matchedItemDetails.map((item, index) => (
             <Text key={index} style={styles.item}>
-              {item.name} — ${item.price.toFixed(2)}: {formatDistanceToNow(new Date(item.updatedAt))} ago by {item.updatedBy}
+              {item.name} — ${item.price.toFixed(2)}:{" "}
+              {item.updatedAt
+                ? `${formatDistanceToNow(new Date(item.updatedAt))} ago`
+                : "Update date unknown"}{" "}
+              updated by {item.updatedBy || "Unknown"}
             </Text>
           ))}
         </View>
