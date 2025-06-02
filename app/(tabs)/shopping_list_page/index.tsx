@@ -39,6 +39,7 @@ export default function ShoppingListPage() {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [newItemName, setNewItemName] = useState("");
   const [storeMatches, setStoreMatches] = useState<StoreMatch[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -75,6 +76,34 @@ export default function ShoppingListPage() {
     await deleteDoc(doc(db, "users", user.uid, "shoppingLists", id));
   };
 
+  const fetchSuggestions = async (term: string) => {
+    if (!term.trim()) {
+      setSuggestions([]);
+      return;
+    }
+  
+    const lowerTerm = term.trim().toLowerCase();
+    const q = query(collection(db, "items"));
+    const snapshot = await getDocs(q);
+  
+    const matches = new Set<string>();
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.name?.toLowerCase().includes(lowerTerm)) {
+        matches.add(data.name);
+      }
+      if (Array.isArray(data.tags)) {
+        data.tags.forEach((tag: string) => {
+          if (tag.toLowerCase().includes(lowerTerm)) {
+            matches.add(tag);
+          }
+        });
+      }
+    });
+  
+    setSuggestions(Array.from(matches).slice(0, 6));
+  };
+  
   const loadAndNavigateToBestStore = async () => {
     const uniqueNames = [...new Set(items.map((item) => item.name.trim()))];
     const storeMap: Record<string, StoreMatch> = {};
@@ -136,7 +165,7 @@ export default function ShoppingListPage() {
     if (matches.length > 0) {
       router.push({
         pathname: "/(tabs)/shopping_list_page/store_comparison",
-        params: { storeMatches: JSON.stringify(matches) }
+        params: { storeMatches: JSON.stringify(matches), shoppingList: JSON.stringify(uniqueNames) }
       });
     } else {
       Alert.alert("No store matches found.");
@@ -159,10 +188,18 @@ export default function ShoppingListPage() {
         style={styles.input}
         placeholder="Enter item"
         value={newItemName}
-        onChangeText={setNewItemName}
+        onChangeText={(text) => {setNewItemName(text); fetchSuggestions(text);}}
         onSubmitEditing={addItem}
       />
-      <Button title="Add Item" onPress={addItem} />
+      <Button title="Add Item" onPress={addItem}/>
+      {suggestions.map((suggestion, idx) => (
+        <TouchableOpacity key={idx} onPress={() => {
+          setNewItemName(suggestion);
+          setSuggestions([]);
+        }}>
+          <Text style={{ color: "#666", paddingVertical: 8 }}>{suggestion}</Text>
+        </TouchableOpacity>
+      ))}
 
       {items.map((item) => (
         <View key={item.id} style={styles.card}>
@@ -212,4 +249,11 @@ const styles = StyleSheet.create({
     color: "red",
     fontWeight: "bold",
   },
+  button: {
+    backgroundColor: '#984063',
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  }
 });

@@ -25,37 +25,50 @@ interface StoreMatch {
 }
 
 export default function StoreComparisonScreen() {
-  const { storeMatches } = useLocalSearchParams();
+  const { storeMatches, shoppingList } = useLocalSearchParams();
   const parsedMatches: StoreMatch[] = storeMatches ? JSON.parse(storeMatches as string) : [];
+  const fullShoppingList: string[] = shoppingList ? JSON.parse(shoppingList as string) : [];
+  const normalizedShoppingList = fullShoppingList.map(n => n.trim().toLowerCase());
+
   const [matchedItemDetails, setMatchedItemDetails] = useState<ItemMatchInfo[]>([]);
   const [selectedStoreId, setSelectedStoreId] = useState(parsedMatches[0]?.id || "");
   const selectedStore = parsedMatches.find((s) => s.id === selectedStoreId);
   const router = useRouter();
+  const [missingItems, setMissingItems] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchItemDetails = async () => {
       if (!selectedStore) return;
 
-      const itemNames = selectedStore.matchedItems.map((item) => item.name);
-
       const q = query(collection(db, "items"), where("store_id", "==", selectedStore.id));
       const snapshot = await getDocs(q);
 
-      const itemsWithMeta: ItemMatchInfo[] = [];
+      const foundTerms = new Set<string>();
+      const updatedItems: ItemMatchInfo[] = [];
 
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        if (itemNames.includes(data.name)) {
-          itemsWithMeta.push({
+        const name = data.name?.toLowerCase().trim();
+        const tags: string[] = Array.isArray(data.tags) ? data.tags.map(t => t.toLowerCase()) : [];
+
+        const matches = normalizedShoppingList.filter(term => name === term || tags.includes(term));
+
+        if (matches.length > 0) {
+          updatedItems.push({
             name: data.name,
             price: data.sale_price,
             updatedBy: typeof data.updatedBy === "string" ? data.updatedBy : "Unknown",
-            updatedAt: data.updatedAt?.toDate?.(),
+            updatedAt: data.updatedAt?.toDate?.()
           });
+
+          matches.forEach(term => foundTerms.add(term));
         }
       });
 
-      setMatchedItemDetails(itemsWithMeta);
+      setMatchedItemDetails(updatedItems);
+
+      const missing = normalizedShoppingList.filter(term => !foundTerms.has(term));
+      setMissingItems(missing);
     };
 
     fetchItemDetails();
@@ -91,13 +104,22 @@ export default function StoreComparisonScreen() {
 
           {matchedItemDetails.map((item, index) => (
             <Text key={index} style={styles.item}>
-              {item.name} — ${item.price.toFixed(2)}:{" "}
-              {item.updatedAt
+              {item.name} — ${item.price.toFixed(2)}: {item.updatedAt
                 ? `${formatDistanceToNow(new Date(item.updatedAt))} ago`
-                : "Update date unknown"}{" "}
-              updated by {item.updatedBy || "Unknown"}
+                : "Update date unknown"} updated by {item.updatedBy || "Unknown"}
             </Text>
           ))}
+
+          {missingItems.length > 0 && (
+            <View style={{ marginTop: 20 }}>
+              <Text style={{ fontWeight: "bold", marginBottom: 4, color: "black" }}>Missing Items:</Text>
+              {missingItems.map((name, idx) => (
+                <Text key={idx} style={{ fontStyle: "italic", color: "red", marginBottom: 4 }}>
+                  {name}
+                </Text>
+              ))}
+            </View>
+          )}
         </View>
       )}
     </ScrollView>
