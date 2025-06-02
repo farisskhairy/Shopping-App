@@ -30,6 +30,7 @@ export default function camera_page() {
     
     const take_picture = async () => {
         const photo = await camera.current?.takePictureAsync();
+        await camera.current?.pausePreview();
         set_photo_file(photo?.uri);
     };
 
@@ -94,7 +95,6 @@ export default function camera_page() {
                                 } else {
                                     router.navigate(`/add_item_and_location/add_item?photo_file=${photo_file}`);
                                 }
-                                set_photo_file(undefined);
                             }
                         }   
                     >
@@ -106,6 +106,7 @@ export default function camera_page() {
                     <Pressable 
                         onPress = {() => { 
                             set_photo_file(undefined);
+                            camera.current?.resumePreview();
                         }}
                     >
                         <AntDesign name="closecircle" size={40.2} color="black"/>

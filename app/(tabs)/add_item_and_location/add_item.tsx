@@ -175,12 +175,18 @@ export default function Add_Item() {
                                         alert("Please fill all information for item!");
                                     } else if (store_name === undefined) {
                                         alert("Please choose a store to select.")
-                                    } else if (barcode === "") {
-                                        router.push(`/edit_item_page?name=${name}&sale_price=${sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}`);
                                     } else if (photo_file === undefined) {
-                                        router.push(`/edit_item_page?name=${name}&sale_price=${sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&barcode=${barcode}&upload=true`);
+                                        if (barcode !== ""){
+                                            router.push(`/edit_item_page?name=${name}&sale_price=${sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&barcode=${barcode}&upload=true`);
+                                        } else {
+                                            router.push(`/edit_item_page?name=${name}&sale_price=${sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&upload=true`);
+                                        }
                                     } else {
-                                        router.push(`/edit_item_page?name=${name}&sale_price=${sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&barcode=${barcode}&photo_file=${photo_file}&upload=true`);
+                                        if (barcode !== "") {
+                                            router.push(`/edit_item_page?name=${name}&sale_price=${sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&barcode=${barcode}&photo_file=${photo_file}&upload=true`);
+                                        } else {
+                                            router.push(`/edit_item_page?name=${name}&sale_price=${sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&photo_file=${photo_file}&upload=true`);
+                                        }
                                     }
                                 }
                             }
