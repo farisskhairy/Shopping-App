@@ -191,15 +191,20 @@ export default function ShoppingListPage() {
         onChangeText={(text) => {setNewItemName(text); fetchSuggestions(text);}}
         onSubmitEditing={addItem}
       />
+      {suggestions.length > 0 && (
+        <View style={styles.suggestionBox}>
+          {suggestions.map((suggestion, idx) => (
+            <TouchableOpacity key={idx} onPress={() => {
+              setNewItemName(suggestion);
+              setSuggestions([]);
+            }}>
+              <Text style={styles.suggestionItem}>{suggestion}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
       <Button title="Add Item" onPress={addItem}/>
-      {suggestions.map((suggestion, idx) => (
-        <TouchableOpacity key={idx} onPress={() => {
-          setNewItemName(suggestion);
-          setSuggestions([]);
-        }}>
-          <Text style={{ color: "#666", paddingVertical: 8 }}>{suggestion}</Text>
-        </TouchableOpacity>
-      ))}
+
 
       {items.map((item) => (
         <View key={item.id} style={styles.card}>
@@ -255,5 +260,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 20,
-  }
+  },
+  suggestionBox: {
+    backgroundColor: "#f0f0f0",
+    borderWidth: 1,
+    borderColor: "#bbb",
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 10,
+  },
+  suggestionItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    color: "#333",
+  },
+  
 });
