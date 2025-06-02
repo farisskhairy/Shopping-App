@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Pressable, TextInput, Text, SafeAreaView, KeyboardAvoidingView, Platform } from "react-native";
+import { View, StyleSheet, Pressable, TextInput, Text, SafeAreaView } from "react-native";
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from "expo-image";
 import { doc, setDoc, collection, getDoc, updateDoc, increment, addDoc, Timestamp } from 'firebase/firestore';
