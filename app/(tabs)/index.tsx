@@ -123,12 +123,12 @@ export default function Index() {
         item.brand.toString().toLowerCase().includes(query) ||
         item.quantity.toString().toLowerCase().includes(query) ||
         // item.barcode.includes(query) ||
-        (Array.isArray(item.tags) && item.tags.some((tag) =>
-        tag.toString().toLowerCase().includes(query)
-        ))
+        item.tags?.some((tag) => tag.toString().toLowerCase().includes(query))
       );
-        matchesTag = selectedTag ? Array.isArray(item.tags) && item.tags.includes(selectedTag) : true;
-        return matchesText && matchesTag;
+      if (item.tags) {
+        matchesTag = selectedTag ? item.tags.includes(selectedTag) : true;
+      }
+      return matchesText && matchesTag;
     }
   });
 

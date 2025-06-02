@@ -147,7 +147,7 @@ export default function Edit_Item_Page() {
                         } else {
                             upload_tag = [];
                         }
-                    } 
+                    }
                     else {
                         try {
                             upload_tag = upload_tag.split(",").map((item: any) => item.trim());
