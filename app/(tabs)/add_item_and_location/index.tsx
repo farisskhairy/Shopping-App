@@ -71,8 +71,8 @@ const styling = StyleSheet.create({
         width: "100%"
     },
     intro_add_button: {
-        width: 392,
-        height: 87,
+        width: "80%",
+        height: "12.6%",
         justifyContent: 'center',
         alignItems: 'center',
         flexDirection: 'row',
@@ -82,8 +82,8 @@ const styling = StyleSheet.create({
         marginBottom: 11.46
     },
     intro_camera_button: {
-        width: 392,
-        height: 87,
+        width: "80%",
+        height: "12.6%",
         justifyContent: 'center',
         alignItems: 'center',
         flexDirection: 'row',

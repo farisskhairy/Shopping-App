@@ -30,9 +30,12 @@ export default function Scanner() {
         const quantity = encodeURIComponent(product.quantity || "");
         const encodedBarcode = encodeURIComponent(barcode);
 
-        
-        router.push(`/add_item_and_location/add_item?store_id=${store_id}&store_name=${store_name}&store_address=${store_address}&name=${name}&brand=${brand}&quantity=${quantity}&barcode=${encodedBarcode}`);
-      } else {
+        if (store_name) {
+          router.push(`/add_item_and_location/add_item?store_id=${store_id}&store_name=${store_name}&store_address=${store_address}&name=${name}&brand=${brand}&quantity=${quantity}&barcode=${encodedBarcode}`);
+        } else {
+          router.push(`/add_item_and_location/add_item?name=${name}&brand=${brand}&quantity=${quantity}&barcode=${encodedBarcode}`);
+        }
+        } else {
         Alert.alert("Item not found", "No product found for that barcode.");
         setTimeout(() => (scannedRef.current = false), 2000);
       }
