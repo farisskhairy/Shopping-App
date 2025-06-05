@@ -54,9 +54,9 @@ export default function Edit_Item_Page() {
                                 await updateDoc(userDocRef, {
                                     positive_points_ranking: increment(100)
                                 });
+                                // Sorry for the long lines, back tick literals do not escape new lines!
                                 await addDoc(collection(db, "posts"), {
-                                    text: `[Added New Item] Name = ${name}, Sale Price = $${sale_price}, Retail Price = $${retail_price}, Brand = ${brand}, 
-                                    Location = ${store_name}`,
+                                    text: `[Added New Item] Name = ${name}, Sale Price = $${sale_price}, Retail Price = $${retail_price}, Brand = ${brand}, Location = ${store_name}`,
                                     likes: 0,
                                     dislikes: 0,
                                     username: data.name,
@@ -184,7 +184,8 @@ export default function Edit_Item_Page() {
                             positive_points_ranking: increment(50)
                         });
                         await addDoc(collection(db, "posts"), {
-                            text: `[Updated Item] ${upload_name}, Sale Price = $${upload_sale_price}, Retail Price = $${upload_retail_price}, Brand = ${upload_brand}`,
+                            text: 
+                            `[Updated Item] ${upload_name}, Sale Price = $${upload_sale_price}, Retail Price = $${upload_retail_price}, Brand = ${upload_brand}`,
                             likes: 0,
                             dislikes: 0,
                             username: user.name,
@@ -306,34 +307,42 @@ export default function Edit_Item_Page() {
             <View style = {styling.edit_area}>
                 <View style = {styling.item_data_area}>
                     <View style = {styling.item_data}>
-                        <TextInput style={ styling.item_text } placeholder={ name } onChangeText={ name_input } value={ new_name } textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={ styling.item_text } placeholder={ name } onChangeText={ name_input } value={ new_name } textAlign="center" 
+                        placeholderTextColor="black"/>
                     </View>
                     <View style = {styling.item_data}>
-                        <TextInput style={ styling.item_text } placeholder={ brand } onChangeText={ brand_input } value={ new_brand } textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={ styling.item_text } placeholder={ brand } onChangeText={ brand_input } value={ new_brand } textAlign="center" 
+                        placeholderTextColor="black"/>
                     </View>
                     <View style = {styling.item_data}>
-                        <TextInput style={ styling.item_text } placeholder={ quantity } onChangeText={ quantity_input } value={ new_quantity } textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={ styling.item_text } placeholder={ quantity } onChangeText={ quantity_input } value={ new_quantity } textAlign="center" 
+                        placeholderTextColor="black"/>
                     </View>
                     <View style = {styling.item_data}>
                         <Text style={ styling.item_text }>
                             Retail Price = $
                         </Text>
-                        <TextInput style={ styling.item_text } placeholder={ retail_price } onChangeText={ retail_price_input } value={ new_retail_price } textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={ styling.item_text } placeholder={ retail_price } onChangeText={ retail_price_input } value={ new_retail_price } 
+                        textAlign="center" placeholderTextColor="black"/>
                     </View>
                     <View style = {styling.item_data}>
                         <Text style= { styling.item_text}>
                             Sale Price = $
                         </Text>
-                        <TextInput style= { styling.item_text } placeholder={ sale_price } onChangeText={ sale_price_input } value={ new_sale_price } textAlign="center" placeholderTextColor="#72B1F5"/>
+                        <TextInput style= { styling.item_text } placeholder={ sale_price } onChangeText={ sale_price_input } value={ new_sale_price } 
+                        textAlign="center" placeholderTextColor="#72B1F5"/>
                     </View>
                     <View style = {styling.item_data}>
-                        <TextInput style={ styling.item_text } placeholder={ store_name } onChangeText={ store_input } value={ new_store_name } textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={ styling.item_text } placeholder={ store_name } onChangeText={ store_input } value={ new_store_name } 
+                        textAlign="center" placeholderTextColor="black"/>
                     </View>
                     <View style = {styling.item_data}>
-                        <TextInput style={ styling.item_text } placeholder={ process_tags()["tag_string"] !== undefined ? process_tags()["tag_string"] : "Tags (optional)" } onChangeText={ tag_input } value={ new_tag } textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={ styling.item_text } placeholder={ process_tags()["tag_string"] !== undefined ? process_tags()["tag_string"] : 
+                            "Tags (optional)" } onChangeText={ tag_input } value={ new_tag } textAlign="center" placeholderTextColor="black"/>
                     </View>
                     <View style = {styling.item_data}>
-                        <TextInput style={ styling.item_text } placeholder={ "Barcode (optional)" } onChangeText={ barcode_input } value={ new_barcode } textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={ styling.item_text } placeholder={ "Barcode (optional)" } onChangeText={ barcode_input } value={ new_barcode } 
+                        textAlign="center" placeholderTextColor="black"/>
                     </View>
                 </View>
                 <View style = {styling.picture_area}>

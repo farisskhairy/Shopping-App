@@ -246,7 +246,8 @@ export const ProfilePage = () => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.rank_area}>
-        <Text style={styles.rank_text}>Ranking Points: { calculate_ranking()["points"] >= 0 ? "+" : "" }{calculate_ranking()["points"]}, {calculate_ranking()["rank_name"]} {calculate_ranking()["rank_emblem"]}</Text>
+        <Text style={styles.rank_text}>Ranking Points: { calculate_ranking()["points"] >= 0 ? "+" : "" }{calculate_ranking()["points"]}, 
+          {calculate_ranking()["rank_name"]} {calculate_ranking()["rank_emblem"]}</Text>
       </View>
       <View style={styles.profileHeader}>
         {profile.photoUrl?.startsWith('http') ? (

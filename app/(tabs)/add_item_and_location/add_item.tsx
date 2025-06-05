@@ -17,7 +17,8 @@ export default function Add_Item() {
 
     const router = useRouter();
 
-    let { store_id, store_name, store_address, photo_file } = useLocalSearchParams<{ store_id?: string; store_name?: string; store_address?: string; photo_file?: string; }>();
+    let { store_id, store_name, store_address, photo_file } = useLocalSearchParams<{ store_id?: string; store_name?: string; store_address?: string; 
+        photo_file?: string; }>();
     // Trim length of name of store to fit display area. ~ Will reconsider implementation soon.
     let abbreviated_store_name = store_name;
     if (abbreviated_store_name === undefined || abbreviated_store_name === "") {
@@ -144,16 +145,21 @@ export default function Add_Item() {
                 </View>
                 {/* Place to enter item information. */}
                 <Pressable style={styling.add_area}>
-                    <TextInput style={styling.add_area_component} placeholder="Name" onChangeText={name_input} value={name} textAlign="center" placeholderTextColor="black"/>
+                    <TextInput style={styling.add_area_component} placeholder="Name" onChangeText={name_input} value={name} textAlign="center" 
+                    placeholderTextColor="black"/>
                     <View style = {styling.choose_price_button}>
                         <View  style={styling.select_price_button}>
-                            <TextInput placeholder=" Sale Price" onChangeText={sale_price_input} value={sale_price} textAlign="center" placeholderTextColor="black" inputMode = "decimal" />
+                            <TextInput placeholder=" Sale Price" onChangeText={sale_price_input} value={sale_price} textAlign="center" 
+                            placeholderTextColor="black" inputMode = "decimal" />
                         </View>
-                        <TextInput style={styling.select_price_button} placeholder=" Retail (USD)" onChangeText={retail_price_input} value={retail_price} textAlign="center" placeholderTextColor="black" inputMode = "decimal" />
+                        <TextInput style={styling.select_price_button} placeholder=" Retail (USD)" onChangeText={retail_price_input} 
+                        value={retail_price} textAlign="center" placeholderTextColor="black" inputMode = "decimal" />
                     </View>     
                     <View style = {styling.choose_price_button}>
-                        <TextInput style={styling.select_price_button} placeholder="Brand" onChangeText={brand_input} value={brand} textAlign="center" placeholderTextColor="black"/>
-                        <TextInput style={styling.select_price_button} placeholder="Quantity" onChangeText={quantity_input} value={quantity} textAlign="center" placeholderTextColor="black"/>
+                        <TextInput style={styling.select_price_button} placeholder="Brand" onChangeText={brand_input} value={brand} textAlign="center" 
+                        placeholderTextColor="black"/>
+                        <TextInput style={styling.select_price_button} placeholder="Quantity" onChangeText={quantity_input} value={quantity} textAlign="center" 
+                        placeholderTextColor="black"/>
                     </View>
                 </Pressable>
                 <View style = { styling.picture_button_area}>
@@ -192,6 +198,7 @@ export default function Add_Item() {
                                         alert("Please fill all information for item!");
                                     } else if (store_name === undefined) {
                                         alert("Please choose a store to select.")
+                                    // Sorry for the long lines, back tick literals do not escape new lines!
                                     } else if (photo_file === undefined) {
                                         if (barcode !== ""){
                                             router.push(`/edit_item_page?name=${name}&sale_price=${upload_sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&barcode=${barcode}&upload=true`);
@@ -200,7 +207,8 @@ export default function Add_Item() {
                                         }
                                     } else {
                                         if (barcode !== "") {
-                                            router.push(`/edit_item_page?name=${name}&sale_price=${upload_sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&barcode=${barcode}&photo_file=${photo_file}&upload=true`);
+                                            router.push(`/edit_item_page?name=${name}&sale_price=${upload_sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}
+                                                &barcode=${barcode}&photo_file=${photo_file}&upload=true`);
                                         } else {
                                             router.push(`/edit_item_page?name=${name}&sale_price=${upload_sale_price}&retail_price=${retail_price}&brand=${brand}&quantity=${quantity}&store_name=${store_name}&store_id=${store_id}&store_address=${store_address}&photo_file=${photo_file}&upload=true`);
                                         }

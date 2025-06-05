@@ -151,15 +151,12 @@ export default function Index() {
           ListFooterComponent={loadingMore ? <ActivityIndicator size="small" /> : null}
           renderItem={({ item }) => (
             // Navigates to item page if selected.
+            // Sorry for the long lines, back tick literals do not escape new lines!
             <Pressable style={styles.card} onPress = {() => { 
                   if (item.tags && item.tags.length !== 0) {
-                    router.push(`/edit_item_page?id=${item.id}&name=${item.name}&sale_price=${item.sale_price}&retail_price=${item.retail_price}&brand=${item.brand}
-                      &quantity=${item.quantity}&store_name=${item.store_name}&store_id=${item.store_id}&store_address=${item.store_address}&barcode=${item.barcode}
-                      &upload=false&tags=${item.tags.join("-")}`); 
+                    router.push(`/edit_item_page?id=${item.id}&name=${item.name}&sale_price=${item.sale_price}&retail_price=${item.retail_price}&brand=${item.brand}&quantity=${item.quantity}&store_name=${item.store_name}&store_id=${item.store_id}&store_address=${item.store_address}&barcode=${item.barcode}&upload=false&tags=${item.tags.join("-")}`); 
                   } else {
-                    router.push(`/edit_item_page?id=${item.id}&name=${item.name}&sale_price=${item.sale_price}&retail_price=${item.retail_price}&brand=${item.brand}
-                      &quantity=${item.quantity}&store_name=${item.store_name}&store_id=${item.store_id}&store_address=${item.store_address}&barcode=${item.barcode}
-                      &upload=false`);
+                    router.push(`/edit_item_page?id=${item.id}&name=${item.name}&sale_price=${item.sale_price}&retail_price=${item.retail_price}&brand=${item.brand}&quantity=${item.quantity}&store_name=${item.store_name}&store_id=${item.store_id}&store_address=${item.store_address}&barcode=${item.barcode}&upload=false`);
                   }
                 }
               }  

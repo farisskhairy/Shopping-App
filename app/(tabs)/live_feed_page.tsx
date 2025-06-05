@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged, User, updateProfile } from 'firebase/auth';
-import { collection, doc, addDoc, getDoc, updateDoc, increment, Timestamp, serverTimestamp, onSnapshot, query, orderBy, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, doc, addDoc, getDoc, updateDoc, increment, Timestamp, serverTimestamp, onSnapshot, 
+  query, orderBy, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { app, auth, db, storage } from '../../firebaseConfig';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 
@@ -563,7 +564,13 @@ export const Post = () => {
                 {item.photoUrl || ''}
               </Text>
               <View>
-                <Text style={[ styles.postUsername, { flexDirection: "row" } ]}>{item.username}  <Text style = { { color: "gray", fontSize: 11 } }>{calculate_ranking(item.user_positive_points, item.user_negative_points)["points"] >= 0 ? "+" : ""}{calculate_ranking(item.user_positive_points, item.user_negative_points)["points"]} {calculate_ranking(item.user_positive_points, item.user_negative_points)["rank_emblem"]}</Text></Text>
+                <Text style={[ styles.postUsername, { flexDirection: "row" } ]}>
+                  {item.username}  <Text style = { { color: "gray", fontSize: 11 } }>
+                    {calculate_ranking(item.user_positive_points, item.user_negative_points)["points"] >= 0 ? "+" : ""}
+                    {calculate_ranking(item.user_positive_points, item.user_negative_points)["points"]} 
+                    {calculate_ranking(item.user_positive_points, item.user_negative_points)["rank_emblem"]}
+                  </Text>
+                </Text>
                 <Text style={[styles.postUsername, { fontSize: 15 }]}>{item.createdAt}</Text>
               </View>
             </View>

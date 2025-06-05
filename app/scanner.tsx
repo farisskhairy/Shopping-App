@@ -37,6 +37,7 @@ export default function Scanner() {
         const quantity = encodeURIComponent(product.quantity || "");
         const encodedBarcode = encodeURIComponent(barcode);
 
+        // Sorry for the long lines, back tick literals do not escape new lines!
         if (store_name) {
           router.push(`/add_item_and_location/add_item?store_id=${store_id}&store_name=${store_name}&store_address=${store_address}&name=${name}&brand=${brand}&quantity=${quantity}&barcode=${encodedBarcode}`);
         } else {
