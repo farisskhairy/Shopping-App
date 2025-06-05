@@ -15,13 +15,12 @@ export default function Edit_Item_Page() {
 
     const router = useRouter();
 
-    // Various URL parameters to carry over information. Quite long and tedious, but tried to use local storage, specifically AsyncStorage library
-    // but that caused more issues so sticking to this right now.
-    // For Steve = once barcode scanner is implemented, pass barcode information through barcode URL parameter here.
+    // Various parameters to carry over information from various parts of the app.
     let { name, sale_price, retail_price, brand, quantity, store_name, store_id, store_address, photo_file, upload, barcode, id, tags } = 
-        useLocalSearchParams<{ name?: string; sale_price?: string; retail_price?: string; brand?: string; quantity?: string; store_name?: string; store_id?: string; store_address?: string; photo_file?: string; upload?: string; barcode?: string; id?: string; tags?: string }>();
-
-    const [item_key, set_item_key] = useState("");
+        useLocalSearchParams<{ name?: string; sale_price?: string; retail_price?: string; brand?: string; quantity?: string; store_name?: string; 
+        store_id?: string; store_address?: string; photo_file?: string; upload?: string; barcode?: string; id?: string; tags?: string }>();
+    
+    // State variables to keep track of item data so edits can be tracked in database.
     const [new_name, name_input] = useState("");
     const [new_sale_price, sale_price_input] = useState("");
     const [new_retail_price, retail_price_input] = useState("");
@@ -30,12 +29,11 @@ export default function Edit_Item_Page() {
     const [new_store_name, store_input] = useState("");
     const [new_photo_file, photo_file_input] = useState("");
     const [new_tag, tag_input] = useState("");
-    // Barcode state variable to update screen.
     const [new_barcode, barcode_input] = useState(barcode || "");
     const [current_upload, start_upload]= useState<any>(false);
-
     const [user, setUser] = useState<any>(null);
-
+    
+    // Checks for user authentication before allow edits to item.
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
@@ -50,13 +48,15 @@ export default function Edit_Item_Page() {
                             name: data.name || '',
                             photoUrl: data.photoUrl || '',
                         });
+                        // If state variables indicate upload status, then function will upload data to database and update information.
                         if (upload === "true" && current_upload === false) {
                             try {
                                 await updateDoc(userDocRef, {
                                     positive_points_ranking: increment(100)
                                 });
                                 await addDoc(collection(db, "posts"), {
-                                    text: `[Added New Item] Name = ${name}, Sale Price = $${sale_price}, Retail Price = $${retail_price}, Brand = ${brand}, Location = ${store_name}`,
+                                    text: `[Added New Item] Name = ${name}, Sale Price = $${sale_price}, Retail Price = $${retail_price}, Brand = ${brand}, 
+                                    Location = ${store_name}`,
                                     likes: 0,
                                     dislikes: 0,
                                     username: data.name,
@@ -68,7 +68,6 @@ export default function Edit_Item_Page() {
                             }
                         }
                     } else {
-                        // console.warn('User profile not found');
                         // no user info found 
                         setUser({
                             id: currentUser.uid as string,
@@ -112,8 +111,9 @@ export default function Edit_Item_Page() {
                 } else {
                     item_key = doc(db, "items", item_key);
                 }
-                // Quite tedious, but it is current workaround for uploading between state variables and variables from URL parameter variables.
-                // These two types of variables don't mix in TextInput so using this right now.
+                // Updating of state variables. State variables persist through re-rendering and refreshes,
+                // so need to formally check if state variable is old or new information so old data will not be
+                // uploaded.
                 if (current_upload === true) {
                     let upload_name: any = new_name;
                     let upload_sale_price: any = new_sale_price;
@@ -141,6 +141,7 @@ export default function Edit_Item_Page() {
                     if (new_store_name === "") {
                         upload_store_name = store_name;
                     }
+                    // Removes commas from tags and uploads as an array.
                     if (new_tag === "") {
                         if (process_tags()["tag_array"]) {
                             upload_tag = process_tags()["tag_array"];
@@ -155,6 +156,7 @@ export default function Edit_Item_Page() {
                             console.log(exception);
                         }
                     }
+                    // Uploads data to database Firebase.
                     await setDoc(item_key, {
                         id: item_key.id,
                         name: upload_name,
@@ -175,6 +177,7 @@ export default function Edit_Item_Page() {
                     });
                     alert("Item saved.");
                     start_upload(false);
+                    // Creates an notification on Live Feed page of updated item.
                     try {
                         const userDocRef = doc(db, 'users', user.id);
                         await updateDoc(userDocRef, {
@@ -191,6 +194,7 @@ export default function Edit_Item_Page() {
                     } catch (exception) {
                         console.log(exception);
                     }
+                    // Updates screen with its parameter data so screen will render correct information.
                     router.setParams({
                         name: upload_name, 
                         sale_price: upload_sale_price,
@@ -206,7 +210,9 @@ export default function Edit_Item_Page() {
                         barcode: upload_barcode
                     });
                 }
-                // This is if item is being uploaded for the first time.
+                // This is if item is being uploaded for the first time instead of being edited and updated on database.
+                // There are separate if else branches for uploading because compensating for React's state variable functionality
+                // and rerendering mechanism.
                 else {
                     await setDoc(item_key, {
                         id: item_key.id,
@@ -265,6 +271,7 @@ export default function Edit_Item_Page() {
     [current_upload]
     );
 
+    // Function to process user input tags. Converts string to array.
     function process_tags() {
         let processed_tags_array;
         let processed_tags_string;
@@ -278,9 +285,11 @@ export default function Edit_Item_Page() {
     return (
         <SafeAreaView style = {styling.whole_area}>
             <View style = {styling.header}>
+                {/* Back button. */}
                 <Pressable onPress = { () => { router.push("/"); } }>
                     <Fontisto name="arrow-left-l" size={29.6} color="black" />
                 </Pressable>
+                {/* Upload button at top right of page. */}
                 <Pressable onPress = { () => { 
                             if (user === null) { 
                                 alert("Please sign in.") 
@@ -293,6 +302,7 @@ export default function Edit_Item_Page() {
                     <AntDesign name="checkcircleo" size={33.2} color="black"/>
                 </Pressable>
             </View>
+            {/* Area for user input of item data. */}
             <View style = {styling.edit_area}>
                 <View style = {styling.item_data_area}>
                     <View style = {styling.item_data}>

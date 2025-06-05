@@ -1,3 +1,5 @@
+// @ts-nocheck (CameraView has mode barcode scanner bug)
+
 import React, { useState, useRef } from "react";
 import { CameraMode, CameraType, CameraView, useCameraPermissions, BarcodeScanningResult } from "expo-camera";
 import { Alert, Button, Pressable, StyleSheet, View } from "react-native";
@@ -6,23 +8,28 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
 export default function Scanner() {
+
   const router = useRouter();
+
+  // // State variables to allow display of camera through refreshes.
   const { store_id, store_name, store_address } = useLocalSearchParams<{ store_id?: string; store_name?: string; store_address?: string }>();
   const [cameraPermission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const scannedRef = useRef(false);
-  //const [scanned, setScanned] = useState(false);
 
+  // Processes barcode information if item has been scanned. Parameter is information from camera of barcode.
   const handleBarcodeScanned = async (result: BarcodeScanningResult) => {
     if (!result?.data || scannedRef.current) return;
     scannedRef.current = (true);
     console.log("Barcode scanned:", result.data);
 
     const barcode = result.data;
+    // Retrieves data of barcode from Open Food Facts API.
     try {
       const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
       const data = await response.json();
 
+      // If data exists, sends data to adding item page for confirmation and upload.
       if (data.status === 1) {
         const product = data.product;
         const name = encodeURIComponent(product.product_name || "");
@@ -45,8 +52,10 @@ export default function Scanner() {
     }
   };
 
+  // Returns nothing if camera permission is not granted.
   if (!cameraPermission) return null;
 
+  // Asks for camera permission.
   if (!cameraPermission.granted) {
     return (
       <View>

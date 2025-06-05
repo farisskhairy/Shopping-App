@@ -38,7 +38,8 @@ export default function Add_Item() {
     const [user, setUser] = useState<any>(null);
     const [barcode, setBarcode] = useState(incomingBarcode || "");
     const [isChecked, setChecked] = useState(false);
-
+    
+    // Checks for user authentication, updates app of user's data if signed in.
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
@@ -72,6 +73,7 @@ export default function Add_Item() {
         return () => unsubscribe();
     }, []);
 
+    // Component for picture rendering.
     function Picture_Button() {
         if (photo_file !== undefined) {
             return (
@@ -140,6 +142,7 @@ export default function Add_Item() {
                         <Fontisto name="arrow-left-l" size={29.6} color="black" />
                     </Pressable>
                 </View>
+                {/* Place to enter item information. */}
                 <Pressable style={styling.add_area}>
                     <TextInput style={styling.add_area_component} placeholder="Name" onChangeText={name_input} value={name} textAlign="center" placeholderTextColor="black"/>
                     <View style = {styling.choose_price_button}>

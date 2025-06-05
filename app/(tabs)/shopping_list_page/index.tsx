@@ -5,11 +5,13 @@ import { db } from "firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { useRouter } from "expo-router";
 
+// Object description for grocery item.
 interface ShoppingItem {
   id: string;
   name: string;
 }
 
+// Object description for displaying item in cart.
 interface ItemMatchInfo {
   name: string;
   price: number;
@@ -17,6 +19,7 @@ interface ItemMatchInfo {
   updatedAt: Date;
 }
 
+// Object description for the store that is best to shop at.
 interface StoreMatch {
   id: string;
   name: string;
@@ -26,6 +29,7 @@ interface StoreMatch {
 }
 
 export default function ShoppingListPage() {
+  // Checks for user authentication.
   const auth = getAuth();
   const [user, setUser] = useState<any>(null);
   useEffect(() => {
@@ -36,14 +40,18 @@ export default function ShoppingListPage() {
   }, []);
   const router = useRouter();
 
+  // Variables with values that persist even through refreshing/re-rendering.
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [newItemName, setNewItemName] = useState("");
+    // Variable for optimal stores calculated by algorithm.
   const [storeMatches, setStoreMatches] = useState<StoreMatch[]>([]);
+  // Variable for items that match user's input.
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
     if (!user) return;
 
+    // Queries items made by user to be added to shopping cart.
     const q = query(
       collection(db, "users", user.uid, "shoppingLists"),
       orderBy("name")
@@ -59,6 +67,7 @@ export default function ShoppingListPage() {
     return () => unsubscribe();
   }, [user]);
 
+  // Add item information to user's shopping cart.
   const addItem = async () => {
     if (!user) return;
 
@@ -76,6 +85,7 @@ export default function ShoppingListPage() {
     await deleteDoc(doc(db, "users", user.uid, "shoppingLists", id));
   };
 
+  // Searches for possible matches of items based on user's input.
   const fetchSuggestions = async (term: string) => {
     if (!term.trim()) {
       setSuggestions([]);
@@ -104,27 +114,33 @@ export default function ShoppingListPage() {
     setSuggestions(Array.from(matches).slice(0, 6));
   };
   
+
+  // Algorithm to calculate best store to shop at, based on items and most recent price.
   const loadAndNavigateToBestStore = async () => {
+    // Loads grocery items to be processed.
     const uniqueNames = [...new Set(items.map((item) => item.name.trim()))];
     const storeMap: Record<string, StoreMatch> = {};
-  
+    
     for (const name of uniqueNames) {
       const nameQuery = query(
         collection(db, "items"),
         where("name", ">=", name),
         where("name", "<=", name + "\uf8ff")
       );
-  
+      
+      // Searches for items in database based on its tags.
       const tagQuery = query(
         collection(db, "items"),
         where("tags", "array-contains", name.toLowerCase())
       );
-  
+      
+      // Retrieves item data from database based on shopping cart.
       const [nameSnap, tagSnap] = await Promise.all([getDocs(nameQuery), getDocs(tagQuery)]);
   
       const allDocs = [...nameSnap.docs, ...tagSnap.docs];
       const seen = new Set(); // to prevent duplicates
-  
+      
+      // Adds item and store data to be processed.
       allDocs.forEach(docSnap => {
         const id = docSnap.id;
         if (seen.has(id)) return;
@@ -146,8 +162,9 @@ export default function ShoppingListPage() {
             total: 0,
           };
         }
-  
+        
         const alreadyMatched = storeMap[storeId].matchedItems.some(i => i.name === data.name);
+        // If store info is not retrieved yet, program will retrieve data from database.
         if (!alreadyMatched) {
           storeMap[storeId].matchedItems.push({
             name: data.name,
@@ -159,7 +176,8 @@ export default function ShoppingListPage() {
         }
       });
     }
-  
+    
+    // Checks if there are optimal stores to be shopped.
     const matches = Object.values(storeMap).sort((a, b) => b.matchedItems.length - a.matchedItems.length || a.total - b.total);
     setStoreMatches(matches);
     if (matches.length > 0) {
@@ -172,6 +190,7 @@ export default function ShoppingListPage() {
     }
   };
 
+  // Renders a screen to ask for authentication first.
   if (!user) {
     return (
       <View style={styles.container}>
@@ -184,6 +203,7 @@ export default function ShoppingListPage() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.heading}>Build a Shopping List</Text>
 
+      {/* Place to enter item search and possible item matches will be shown. */}
       <TextInput
         style={styles.input}
         placeholder="Enter item"
@@ -215,6 +235,7 @@ export default function ShoppingListPage() {
         </View>
       ))}
 
+      {/* Proceeds to page to calculate optimal store to shop. */}
       <View style={{ marginTop: 30 }}>
         <Button title="View Store Prices" onPress={loadAndNavigateToBestStore} />
       </View>

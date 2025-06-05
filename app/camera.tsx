@@ -14,6 +14,7 @@ export default function camera_page() {
 
     let { store_id, store_name, store_address } = useLocalSearchParams<{ store_id?: string; store_name?: string; store_address?: string }>();
 
+    // Shortens store name for display.
     let abbreviated_store_name = store_name;
     if (abbreviated_store_name === undefined) {
         abbreviated_store_name = "Store Location";
@@ -21,6 +22,7 @@ export default function camera_page() {
         abbreviated_store_name = abbreviated_store_name.substring(0, 12) + "..";
     }
 
+    // State variables to allow display of camera through refreshes.
     const [use_camera_permission, request_camera_permission] = useCameraPermissions();
     const camera = useRef<CameraView>(null);
     const [photo_file, set_photo_file] = useState<string | undefined>(undefined);
@@ -28,6 +30,7 @@ export default function camera_page() {
     const [front_or_back_camera, set_front_or_back_camera] = useState<CameraType>("back");
     const [start_camera, open_camera] = useState(false);
     
+    // Takes picture and stores location of file into variable.
     const take_picture = async () => {
         const photo = await camera.current?.takePictureAsync();
         await camera.current?.pausePreview();

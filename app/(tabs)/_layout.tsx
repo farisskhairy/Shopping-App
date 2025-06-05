@@ -1,3 +1,5 @@
+// @ts-nocheck (React Native has "implicit type 'any' bug on JSX components")
+
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';

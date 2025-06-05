@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged, User, updateProfile } from 'firebase/auth';
 import { collection, doc, addDoc, getDoc, updateDoc, increment, Timestamp, serverTimestamp, onSnapshot, query, orderBy, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { app, auth, db, storage } from '../../firebaseConfig';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image,} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 
+// Object definition for user profile.
 type AppUser = {
   id: string,
   name: string; 
   photoUrl: string;
 };
 
+// Object definition for user post.
 type Post ={
   id: string;
   text: string;
@@ -23,6 +25,7 @@ type Post ={
   user_negative_points: any
 };
 
+// Object definition for user comment.
 type Comment = {
   id: string;
   text: string;
@@ -38,6 +41,8 @@ type Comment = {
 };
 
 export const Post = () => {
+
+  // State variables for user information, and posts. Keeps track of live feed data through re-renders.
   const [user, setUser] = useState<AppUser | null>(null);
   const [postContent, setPostContent] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -48,6 +53,7 @@ export const Post = () => {
   const [editingMode, setEditingMode] = useState<{ [commentId: string]: boolean }>({});
   const [isNewestFirst, setIsNewestFirst] = useState(true);
   const [update, pushUpdate] = useState<Boolean>(false);
+  const [loading, setLoading] = useState(true);
 
 
   // fetch user data 
@@ -66,7 +72,6 @@ export const Post = () => {
               photoUrl: data.photoUrl || '',
             });
           } else {
-            // console.warn('User profile not found');
             // no user info found 
             setUser({
               id: currentUser.uid as string,
@@ -85,11 +90,12 @@ export const Post = () => {
   }, []);
 
 
-  // post with sort order
+  // Display post with sorted order
   useEffect(() => {
     const postsQuery = query(collection(db, 'posts'), orderBy('createdAt', isNewestFirst ? 'desc' : 'asc'));
     
     const unsubscribe = onSnapshot(postsQuery, async (snapshot) => {
+      setLoading(true);
       const postsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -119,12 +125,13 @@ export const Post = () => {
         }
       }
       setPosts(postsData);
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, [isNewestFirst, update]);
 
-  //comments 
+  // Display comments 
   useEffect(() => {
     const unsubscribes: (() => void)[] = [];
 
@@ -175,7 +182,7 @@ export const Post = () => {
     };
   }, [posts]);
   
-  // new post 
+  // Create new post 
   const handleSubmitPost = async () => {
     if (!user) {
       alert("Please sign in to post.");
@@ -222,7 +229,6 @@ export const Post = () => {
       return;
     }
     try {
-      // Get user info from Firestore
       const userDocRef = doc(db, 'users', userId);
       const userDoc = await getDoc(userDocRef); 
 
@@ -257,7 +263,6 @@ export const Post = () => {
   };
   
    // edit comments 
-  
   const handleEditComment = async(postId: string, commentId: string) => {
     if (!user) {
       alert("cannot edit comment");
@@ -297,8 +302,7 @@ export const Post = () => {
     }
   };
 
- // delete comments 
-  
+ // delete comments
   const handleDeleteComment = async(postId: string, commentId: string) => {
     if (!user) {
       alert("cannot delete comment");
@@ -318,6 +322,7 @@ export const Post = () => {
     }
   };
 
+  // Set post order display.
   const toggleSortOrder = () => {
     setIsNewestFirst(!isNewestFirst);
   };
@@ -490,6 +495,7 @@ export const Post = () => {
     }
   };
 
+  // Calculates ranking of user and displays points with emblem.
   function calculate_ranking(positive_points_ranking: any, negative_points_ranking: any) {
     const points = positive_points_ranking - negative_points_ranking;
     let rank_name;
@@ -518,6 +524,7 @@ export const Post = () => {
   }
 
   return (
+    // Displays area to create a post and filter method.
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.header}>New Post</Text>
@@ -539,8 +546,12 @@ export const Post = () => {
 
       <TouchableOpacity style={styles.button} onPress={handleSubmitPost}>
         <Text style={styles.buttonText}> Submit Post</Text>
+      {/* Loads loading icon if app is retrieving data from database. */}
       </TouchableOpacity>
-
+      {loading ? (
+              <ActivityIndicator size="large" color="#888" style={{ marginTop: 10 }} />
+            ) : (<></>)}
+      {/* Displays all posts and comments. */}
       <FlatList
         data={posts} 
         keyExtractor={(item) => item.id.toString()}
@@ -580,7 +591,8 @@ export const Post = () => {
                   </Text>
 
                     <View style={styles.commentTextContainer}>
-                      <Text style={[ styles.commentUsername, { flexDirection: "row" }]}>{comment.username}  
+                      <Text style={[ styles.commentUsername, { flexDirection: "row" }]}>{comment.username}
+                        {/* Calculates and displays rankings using ranking function. */}
                         <Text style = { { color: "gray", fontSize: 11 } }>
                           {" "}
                           {calculate_ranking(comment.user_positive_points, comment.user_negative_points)["points"] >= 0 ? "+" : ""}
@@ -616,6 +628,7 @@ export const Post = () => {
                     ) : (
                       <>
 
+                      {/* Comments with editing and deleting functionality. */}
                       <Text style={styles.commentText}>{comment.text}</Text>
 
                         {isAuthor && !comment.deleted && (
@@ -650,6 +663,7 @@ export const Post = () => {
               )}}
             />
 
+            {/* Add comment functionality. */}
             <TextInput
               style={styles.input}
               placeholder="Add a comment..."
@@ -660,6 +674,7 @@ export const Post = () => {
               }
             />
 
+            {/* Add comment button. */}
             <TouchableOpacity
               style={styles.commentButton}
               onPress={() => handleAddComment(item.id, commentText[item.id], auth.currentUser?.uid)}

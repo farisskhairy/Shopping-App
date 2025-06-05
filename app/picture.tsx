@@ -9,9 +9,11 @@ export default function show_picture() {
 
     const router = useRouter();
 
+    // Parameters to keep track of store information if user selected store before navigating to the screen.
     const { photo_file } = useLocalSearchParams<{ photo_file?: string }>();
     let { store_id, store_name, store_address } = useLocalSearchParams<{ store_id?: string; store_name?: string; store_address?: string }>();
 
+    // Shortens store name for display.
     let abbreviated_store_name = store_name;
     if (abbreviated_store_name === undefined) {
         abbreviated_store_name = "Store Location";
@@ -24,10 +26,12 @@ export default function show_picture() {
         <View style={styling.picture_area}>
             <Image source= { photo_file } style={styling.picture}/>
             <View style={{position: "absolute", top: "12.9%", left: "79%"}}>
-                {/* Button to go back to Add Page */}
+                {/* Button to confirm image and go back to Add Page. */}
                 <Pressable onPress= {() => {
+                            // Sends store data if app is tracking store data from previous pages.
                             if (store_name) {
-                                router.navigate(`/add_item_and_location/add_item?store_id=${store_id}&store_name=${store_name}&store_address=${store_address}&photo_file=${photo_file}`);
+                                router.navigate(`/add_item_and_location/add_item?store_id=${store_id}
+                                    &store_name=${store_name}&store_address=${store_address}&photo_file=${photo_file}`);
                             } else {
                                 router.navigate(`/add_item_and_location/add_item?photo_file=${photo_file}`);
                             }
@@ -37,6 +41,7 @@ export default function show_picture() {
                     <AntDesign name="checkcircleo" size={40.2} color="black"/>
                 </Pressable>
             </View>
+            {/* Button to retake image, redirects to Camera page. */}
             <View style={{position: "absolute", top: "12.9%", left: "9.96%"}}>
                 <Pressable onPress = {() => {
                             if (store_name) {

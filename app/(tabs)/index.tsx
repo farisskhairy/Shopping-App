@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 
 const PAGE_SIZE = 20
 
-
+// Object description for grocery item in app.
 interface Item {
   id: string;
   name: string;
@@ -25,8 +25,10 @@ interface Item {
 // Place where app will navigate to as the home page of the app. It is set as the SEARCH page so the home page of the app will be the Search page.
 export default function Index() {
 
+  // Navigation object for React Native.
   const router = useRouter();
 
+  // State variables to keep track of item information, user input, and screen rendering.
   const [items, setItems] = useState<Item[]>([]);
   const [searchText, setSearchText] = useState("");
   const [lastVisible, setLastVisible] = useState<any>(null);
@@ -35,7 +37,7 @@ export default function Index() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [allTags, setAllTags] = useState<string[]>([]);
 
-  // Load initial data
+  // Load initial data from database.
   useEffect(() => {
     loadItems();
   }, []);
@@ -65,6 +67,7 @@ export default function Index() {
     setLoading(false);
   };
 
+  // Loads more items from database if scrolling down.
   const loadMore = async () => {
     if (!lastVisible || loadingMore) return;
     setLoadingMore(true);
@@ -82,29 +85,7 @@ export default function Index() {
     setLoadingMore(false);
   };
 
-/*
-  const attachStoreNames = async (docs: any[]) => {
-    const newItems: GroceryItem[] = [];
-    const storeCache = { ...storeNames };
-
-    for (const docSnap of docs) {
-      const data = docSnap.data();
-      const storeId = data.storeId;
-      if (!storeCache[storeId]) {
-        const storeDoc = await getDoc(doc(db, "stores", storeId));
-        if (storeDoc.exists()) {
-          storeCache[storeId] = storeDoc.data().name;
-        } else {
-          storeCache[storeId] = "Unknown Store";
-        }
-      }
-      newItems.push({ id: docSnap.id, ...data, storeName: storeCache[storeId] });
-    }
-
-    setStoreNames(storeCache);
-    return newItems;
-  };
-*/
+  // Extract tag information from database to be processed.
   const extractTags = (loadedItems: Item[]) => {
     const tags = new Set(allTags);
     loadedItems.forEach(item => {
@@ -113,6 +94,7 @@ export default function Index() {
     setAllTags(Array.from(tags).sort());
   };
 
+  // Searches for item based on user input.
   const filteredItems = items.filter(item => {
     const query = searchText.toLowerCase();
     let matchesText;
@@ -122,7 +104,6 @@ export default function Index() {
         item.name.toString().toLowerCase().includes(query) ||
         item.brand.toString().toLowerCase().includes(query) ||
         item.quantity.toString().toLowerCase().includes(query) ||
-        // item.barcode.includes(query) ||
         (Array.isArray(item.tags) && item.tags.some((tag) =>
         tag.toString().toLowerCase().includes(query)
         ))
@@ -142,6 +123,8 @@ export default function Index() {
         value={searchText}
         onChangeText={setSearchText}
       />
+    
+    {/* Menu to select tags for filtering through tags. */}
     <View style={{ zIndex:1}}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagFilter}>
         <Button title="All" onPress={() => setSelectedTag(null)} color={!selectedTag ? "#007aff" : "#ccc"} />
@@ -154,10 +137,12 @@ export default function Index() {
           />
         ))}
       </ScrollView>
+      {/* If loading, renders loading animation. */}
       </View>
       {loading ? (
         <ActivityIndicator size="large" color="#888" style={{ marginTop: 10 }} />
       ) : (
+        // Displays all item information.
         <FlatList
           data={filteredItems}
           keyExtractor={(item) => item.id}
@@ -165,11 +150,16 @@ export default function Index() {
           onEndReachedThreshold={0.5}
           ListFooterComponent={loadingMore ? <ActivityIndicator size="small" /> : null}
           renderItem={({ item }) => (
+            // Navigates to item page if selected.
             <Pressable style={styles.card} onPress = {() => { 
                   if (item.tags && item.tags.length !== 0) {
-                    router.push(`/edit_item_page?id=${item.id}&name=${item.name}&sale_price=${item.sale_price}&retail_price=${item.retail_price}&brand=${item.brand}&quantity=${item.quantity}&store_name=${item.store_name}&store_id=${item.store_id}&store_address=${item.store_address}&barcode=${item.barcode}&upload=false&tags=${item.tags.join("-")}`); 
+                    router.push(`/edit_item_page?id=${item.id}&name=${item.name}&sale_price=${item.sale_price}&retail_price=${item.retail_price}&brand=${item.brand}
+                      &quantity=${item.quantity}&store_name=${item.store_name}&store_id=${item.store_id}&store_address=${item.store_address}&barcode=${item.barcode}
+                      &upload=false&tags=${item.tags.join("-")}`); 
                   } else {
-                    router.push(`/edit_item_page?id=${item.id}&name=${item.name}&sale_price=${item.sale_price}&retail_price=${item.retail_price}&brand=${item.brand}&quantity=${item.quantity}&store_name=${item.store_name}&store_id=${item.store_id}&store_address=${item.store_address}&barcode=${item.barcode}&upload=false`); 
+                    router.push(`/edit_item_page?id=${item.id}&name=${item.name}&sale_price=${item.sale_price}&retail_price=${item.retail_price}&brand=${item.brand}
+                      &quantity=${item.quantity}&store_name=${item.store_name}&store_id=${item.store_id}&store_address=${item.store_address}&barcode=${item.barcode}
+                      &upload=false`);
                   }
                 }
               }  
@@ -180,10 +170,8 @@ export default function Index() {
               <Text>Sale Price: ${item.sale_price}</Text>
               <Text>Retail Price: ${item.retail_price}</Text>
               <Text>Qty: {item.quantity}</Text>
-              {/* <Text>Barcode: {item.barcode}</Text> */}
               <Text>Store: {item.store_name}</Text>
               <Text>Address: {item.store_address}</Text>
-              {/* <Text>Tags: {item.tags.join(", ")}</Text> */}
             </Pressable>
           )}
         />

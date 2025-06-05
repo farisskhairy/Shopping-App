@@ -68,6 +68,7 @@ export default function Signup() {
         style={styles.input}
       />
 
+      {/* Sign up button functionality. */}
       <TouchableOpacity
         style={styles.loginButton}
         onPress={handleSignUp}
@@ -76,9 +77,10 @@ export default function Signup() {
         <Text style={styles.buttonText}>{loading ? 'Signing up...' : 'Sign Up'}</Text>
       </TouchableOpacity>
 
+      {/* Redirect to login page. */}
       <TouchableOpacity
         style={[styles.loginButton, { backgroundColor: '#6C63FF', marginTop: 12 }]}
-        onPress={() => router.replace('./login')} // navigate to the login page 
+        onPress={() => router.replace('./login')}
       >
         <Text style={styles.buttonText}>Back to Login</Text>
       </TouchableOpacity>

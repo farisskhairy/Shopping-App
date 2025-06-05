@@ -6,6 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "firebaseConfig";
 
+// Object definition for item at optimal store.
 interface ItemMatchInfo {
   name: string;
   price: number;
@@ -13,6 +14,7 @@ interface ItemMatchInfo {
   updatedAt?: Date;
 }
 
+// Object definition for store with best prices.
 interface StoreMatch {
   id: string;
   name: string;
@@ -25,17 +27,22 @@ interface StoreMatch {
 }
 
 export default function StoreComparisonScreen() {
+  // Data passed from shooping cart page for best stores information and user's items in cart.
   const { storeMatches, shoppingList } = useLocalSearchParams();
   const parsedMatches: StoreMatch[] = storeMatches ? JSON.parse(storeMatches as string) : [];
   const fullShoppingList: string[] = shoppingList ? JSON.parse(shoppingList as string) : [];
   const normalizedShoppingList = fullShoppingList.map(n => n.trim().toLowerCase());
 
+  // Keeps track of items that are available at store.
   const [matchedItemDetails, setMatchedItemDetails] = useState<ItemMatchInfo[]>([]);
   const [selectedStoreId, setSelectedStoreId] = useState(parsedMatches[0]?.id || "");
   const selectedStore = parsedMatches.find((s) => s.id === selectedStoreId);
   const router = useRouter();
+  // Keeps track of unavailable items at store.
   const [missingItems, setMissingItems] = useState<string[]>([]);
 
+  // Gets item information from database, sorts through items on whether they are available at store or not,
+  // and its previous sale prices.
   useEffect(() => {
     const fetchItemDetails = async () => {
       if (!selectedStore) return;
@@ -52,7 +59,8 @@ export default function StoreComparisonScreen() {
         const tags: string[] = Array.isArray(data.tags) ? data.tags.map(t => t.toLowerCase()) : [];
 
         const matches = normalizedShoppingList.filter(term => name === term || tags.includes(term));
-
+        
+        // Keeps track of prvious sale price of items.
         if (matches.length > 0) {
           updatedItems.push({
             name: data.name,
@@ -65,8 +73,10 @@ export default function StoreComparisonScreen() {
         }
       });
 
+      // Updates state variables with new information from database.
       setMatchedItemDetails(updatedItems);
 
+      // Keeps track of items unavailable at store.
       const missing = normalizedShoppingList.filter(term => !foundTerms.has(term));
       setMissingItems(missing);
     };
@@ -83,6 +93,7 @@ export default function StoreComparisonScreen() {
       <View style={styles.pickerWrapper}>
         <Text style={styles.label}>Select a Store:</Text>
         <View style={styles.pickerContainer}>
+          {/* Choose optimal store and see item price and info. */}
           <Picker
             selectedValue={selectedStoreId}
             onValueChange={(val) => setSelectedStoreId(val)}
@@ -95,7 +106,8 @@ export default function StoreComparisonScreen() {
           </Picker>
         </View>
       </View>
-
+      
+      {/* Displays best prices of items at the optimal store. */}
       {selectedStore && (
         <View style={styles.storeInfo}>
           <Text style={styles.storeName}>{selectedStore.name}</Text>

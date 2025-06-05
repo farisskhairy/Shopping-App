@@ -80,6 +80,7 @@ export const ProfilePage = () => {
   const auth = getAuth();
   const user = auth.currentUser;
 
+  // Loads user profile from database. Redirects to login page if not authenticated.
   useEffect(() => {
 
     if (user) {
@@ -99,10 +100,12 @@ export const ProfilePage = () => {
     return () => unsubscribe();
   }, []);
 
+  // Keeps track of edits of profile information.
   const handleChange = (field: keyof Profile, value: string) => {
     setProfile({ ...profile, [field]: value });
   };
 
+  // Handles uploading edits of profile information.
   const toggleEdit = async (field: keyof EditingState) => {
     const wasEditing = isEditing[field];
 
@@ -125,6 +128,7 @@ export const ProfilePage = () => {
   const handleAddFriendSearch = async () => {
     if (!searchQuery.trim()) return;
 
+    // Looks up profile info of friend on database, adds friend if found, else, error is thrown.
     try {
       const q = query(
         collection(firestore, 'users'),
@@ -157,11 +161,13 @@ export const ProfilePage = () => {
       const updatedFriends = [...friends, newFriend];
       setFriends(updatedFriends);
 
+      // Updates user's friends list.
       if (currentUser) {
         const userRef = doc(firestore, 'users', currentUser.uid);
         await setDoc(userRef, { friends: updatedFriends }, { merge: true });
       }
 
+      // Hides search bar.
       setSearchQuery('');
       setShowSearchBar(false);
     } catch (error) {
@@ -196,16 +202,20 @@ export const ProfilePage = () => {
     }
   };
 
+  // Handles user profile avatar emoji.
   const handleChangePhoto = () => {
+    // Shows emoji menu.
     setShowEmojiPicker((prev) => !prev);
   };
 
   const handleSelectEmoji = async (emoji: string) => {
+    // Hides emoji menu.
     setShowEmojiPicker(false);
     setProfile((prev) => ({ ...prev, photoUrl: emoji }));
     await saveProfileToFirestore({ ...profile, photoUrl: emoji });
   };
 
+  // Calculates ranking of user based on points, and sets an emblem.
   function calculate_ranking() {
     const points = profile.positive_points_ranking - profile.negative_points_ranking;
     let rank_name;
@@ -249,6 +259,7 @@ export const ProfilePage = () => {
           <Text style={styles.editProfileText}> Your appearance </Text>
         </TouchableOpacity>
 
+        {/* Emoji display and emoji menu toggle. */}
         {showEmojiPicker && (
           <View style={styles.emojiPicker}>
             {emojiOptions.map((emoji) => (
@@ -263,7 +274,8 @@ export const ProfilePage = () => {
           </View>
         )}
       </View>
-
+      
+      {/* Personal user profile information display and edit toggles. */}
       {(['name', 'email', 'phone'] as const).map((field) => (
         <View style={styles.inputGroup} key={field}>
           <Text style={styles.label}>{field.charAt(0).toUpperCase() + field.slice(1)}</Text>
@@ -286,7 +298,7 @@ export const ProfilePage = () => {
       ))}
 
 
-    
+      {/* Friends list display and toggle. */}
       <View style={styles.friendsListContainer}>
         <Text style={styles.label}>Friends</Text>
         {friends.map((friend, index) => (
@@ -322,7 +334,7 @@ export const ProfilePage = () => {
         ))}
       </View>
       
-
+      {/* Search bar for friends. */}
       <TouchableOpacity
         onPress={() => setShowSearchBar(!showSearchBar)}
         style={[styles.addFriendButton]}
@@ -353,7 +365,7 @@ export const ProfilePage = () => {
         </View>
       )}
 
-
+      {/* Sign out button functionality. */}
       <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
         <Text style={styles.signOutButtonText}>Sign Out</Text>
       </TouchableOpacity>
